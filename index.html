@@ -1048,24 +1048,20 @@
           longChance: percentToControl('longChance', lerp(from.longChance, to.longChance, move)),
         };
         if (!isAutoFmManual('ratio', now)) {
-          const ratio = lerp(Number(ratioControl.value), targets.ratio, 0.04);
-          setControlValue(ratioControl, ratio, 2);
+          setControlValue(ratioControl, targets.ratio, 2);
         }
 
         if (!isAutoFmManual('modAmount', now)) {
-          const modAmount = lerp(Number(modAmountControl.value), targets.modAmount, 0.04);
-          setControlValue(modAmountControl, modAmount, 0);
+          setControlValue(modAmountControl, targets.modAmount, 0);
         }
 
         if (!isAutoFmManual('decay', now)) {
-          const decay = lerp(Number(decayControl.value), targets.decay, 0.035);
-          setControlValue(decayControl, decay, 2);
+          setControlValue(decayControl, targets.decay, 2);
         }
 
         if (!isAutoFmManual('longChance', now)) {
-          const longChance = lerp(Number(longChanceControl.value), targets.longChance, 0.045);
-          const longNoteBucket = Math.round(longChance * 20);
-          setControlValue(longChanceControl, longChance, 2);
+          const longNoteBucket = Math.round(targets.longChance * 20);
+          setControlValue(longChanceControl, targets.longChance, 2);
 
           if (longNoteBucket !== autoFmLongNoteBucket) {
             autoFmLongNoteBucket = longNoteBucket;
