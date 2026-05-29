@@ -940,19 +940,32 @@
       }
 
       const autoFmDestinations = [
-        { ratio: 0, modAmount: 0, decay: 100, longChance: 0, holdBars: 1 },
-        { ratio: 100, modAmount: 100, decay: 100, longChance: 0, holdBars: 1 },
-        { ratio: 0, modAmount: 0, decay: 100, longChance: 100, holdBars: 1 },
-        { ratio: 100, modAmount: 100, decay: 0, longChance: 100, holdBars: 1 },
-        { ratio: 0, modAmount: 0, decay: 0, longChance: 0, holdBars: 1 },
-        { ratio: 100, modAmount: 100, decay: 100, longChance: 100, holdBars: 2 },
-        { ratio: 0, modAmount: 0, decay: 100, longChance: 0, holdBars: 1 },
-        { ratio: 100, modAmount: 100, decay: 0, longChance: 100, holdBars: 2 },
-        { ratio: 0, modAmount: 100, decay: 0, longChance: 100, holdBars: 1 },
-        { ratio: 100, modAmount: 100, decay: 100, longChance: 0, holdBars: 1 },
-        { ratio: 100, modAmount: 0, decay: 100, longChance: 100, holdBars: 1 },
-        { ratio: 0, modAmount: 100, decay: 0, longChance: 0, holdBars: 1 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdBars: 2 },
+        { ratio: 10, modAmount: 10, decay: 90, longChance: 10, holdBars: 1 },
+        { ratio: 90, modAmount: 10, decay: 90, longChance: 10, holdBars: 1 },
+        { ratio: 90, modAmount: 90, decay: 90, longChance: 10, holdBars: 1 },
+        { ratio: 50, modAmount: 90, decay: 20, longChance: 20, holdBars: 1, moveSteps: 16 },
+        { ratio: 90, modAmount: 90, decay: 20, longChance: 20, holdBars: 1, moveSteps: 16 },
+        { ratio: 90, modAmount: 90, decay: 80, longChance: 50, holdBars: 1, moveSteps: 16 },
+        { ratio: 10, modAmount: 90, decay: 80, longChance: 50, holdBars: 1, moveSteps: 24 },
+        { ratio: 10, modAmount: 90, decay: 20, longChance: 90, holdBars: 1, moveSteps: 16 },
+        { ratio: 90, modAmount: 90, decay: 10, longChance: 90, holdBars: 1 },
+        { ratio: 10, modAmount: 90, decay: 10, longChance: 90, holdBars: 1 },
+        { ratio: 10, modAmount: 10, decay: 10, longChance: 90, holdBars: 1 },
+        { ratio: 10, modAmount: 10, decay: 90, longChance: 90, holdBars: 2 },
+        { ratio: 90, modAmount: 10, decay: 90, longChance: 90, holdBars: 1 },
+        { ratio: 90, modAmount: 10, decay: 20, longChance: 10, holdBars: 1 },
+        { ratio: 90, modAmount: 90, decay: 20, longChance: 10, holdBars: 1 },
+        { ratio: 50, modAmount: 90, decay: 90, longChance: 30, holdBars: 1, moveSteps: 16 },
+        { ratio: 10, modAmount: 90, decay: 90, longChance: 60, holdBars: 1, moveSteps: 16 },
+        { ratio: 10, modAmount: 90, decay: 30, longChance: 90, holdBars: 1, moveSteps: 16 },
+        { ratio: 90, modAmount: 90, decay: 30, longChance: 90, holdBars: 1, moveSteps: 24 },
+        { ratio: 10, modAmount: 90, decay: 80, longChance: 90, holdBars: 2 },
+        { ratio: 10, modAmount: 10, decay: 80, longChance: 90, holdBars: 1 },
+        { ratio: 50, modAmount: 10, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
+        { ratio: 50, modAmount: 90, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
+        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
+        { ratio: 90, modAmount: 50, decay: 80, longChance: 20, holdBars: 1, moveSteps: 24 },
+        { ratio: 10, modAmount: 50, decay: 20, longChance: 80, holdBars: 1, moveSteps: 24 },
       ];
 
       function percentToControl(name, value) {
@@ -981,6 +994,7 @@
       }
 
       function getMoveStepCount(from, to) {
+        if (to.moveSteps !== undefined) return to.moveSteps;
         if (to.moveBars !== undefined) return barsToSteps(to.moveBars);
 
         const distance = getDestinationDistance(from, to);
@@ -1047,6 +1061,7 @@
           decay: percentToControl('decay', lerp(from.decay, to.decay, move)),
           longChance: percentToControl('longChance', lerp(from.longChance, to.longChance, move)),
         };
+
         if (!isAutoFmManual('ratio', now)) {
           setControlValue(ratioControl, targets.ratio, 2);
         }
