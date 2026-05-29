@@ -929,17 +929,9 @@ const now=ctx.currentTime;
 const longLen=longNotes[ti][step];
 
 if(t.name==="CLICK"){
-const strong=[0,4,8,12].includes(step);
-
-noise(
-now,
-strong ? .03 : .02,
-strong ? t.gain*1.25 : t.gain
-);
-
+noise(now,.02,t.gain);
 return;
 }
-
 if(longLen){
 const dur=stepDur*longLen;
 fm(getFreq(t,ti),now,dur,t.gain,true);
