@@ -247,7 +247,7 @@ pointer-events:none;
 
 @media (max-width:700px){
 body{padding:14px}
-h1{font-size:20px;margin: 10px 0 20px 0;}
+h1{font-size:20px;margin:0 0 10px}
 
 .top-controls{
 display:grid;
@@ -1049,6 +1049,59 @@ hitPower:1
 document.querySelector(".wrap").classList.add("collapse-source");
 
 collapseLoop();
+
+setTimeout(()=>{
+document.body.addEventListener(
+"pointerdown",
+restartMachine,
+{once:true}
+);
+},1000);
+}
+
+function restartMachine(){
+
+cancelAnimationFrame(collapseRaf);
+
+collapseObjects.forEach(o=>{
+o.el.style.transition=
+"opacity .8s ease, transform .8s ease";
+
+o.el.style.opacity="0";
+o.el.style.transform+=
+" scale(.6)";
+});
+
+setTimeout(()=>{
+
+document
+.querySelectorAll(".physics-piece")
+.forEach(el=>el.remove());
+
+collapseObjects=[];
+
+document
+const wrap=document.querySelector(".wrap");
+
+wrap.style.opacity="0";
+wrap.classList.remove("collapse-source");
+
+requestAnimationFrame(()=>{
+wrap.style.transition="opacity 1.2s ease";
+wrap.style.opacity="1";
+});
+collapseMode=false;
+
+step=-1;
+barIndex=0;
+currentRepeat=null;
+currentRepeatCount=0;
+
+makePatterns();
+render();
+
+},800);
+
 }
 
 function collapseLoop(){
