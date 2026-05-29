@@ -743,7 +743,10 @@ grid.appendChild(row);
 
 renderRepeatGrid();
 bpmView.textContent=bpmSelect.value==="inf"?"∞":bpmSelect.value;
-stepView.textContent=playing?step:"-";
+stepView.textContent=
+playing
+? String(step + 1).padStart(2,"0")
+: "--";
 barView.textContent=`${barIndex+1} / ${getBarLimit()}`;
 }
 
