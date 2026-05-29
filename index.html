@@ -317,12 +317,13 @@ font-size:11px;
 gap:4px;
 }
 
+
 .delay-block{
 display:grid;
-grid-template-columns:1fr 1fr 2fr;
+grid-template-columns:repeat(4,1fr);
 gap:8px;
 align-items:center;
-margin: 10px 10px 20px 10px;
+margin:0 0 20px;
 }
 
 #delayToggle{
@@ -335,20 +336,22 @@ padding:6px 0;
 margin:0;
 }
 
-.delay-time-wrap{grid-column:2}
+.delay-time-wrap{
+grid-column:2;
+}
 
 .delay-time-wrap select{
 width:100%;
 min-width:0;
 height:36px;
 font-size:12px;
-padding:6px;
+padding:6px 0;
 text-align:center;
 text-align-last:center;
 }
 
 .delay-controls{
-grid-column:3;
+grid-column:3 / -1;
 display:grid;
 grid-template-columns:1fr;
 gap:0;
