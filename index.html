@@ -1,1389 +1,1635 @@
 <!doctype html>
 <html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE COLLAPSE</title>
-
-<style>
-html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
-body{padding:24px;overflow-x:hidden}
-.wrap{max-width:1200px;margin:auto}
-h1{font-size:24px;margin:0 0 18px}
-
-button,select,input{
-font:inherit;
-background:#000;
-color:#eee;
-border:1px solid #555;
-padding:8px 14px;
-border-radius:999px;
-touch-action:manipulation;
-}
-
-button.active{
-background:#0ff;
-color:#000;
-border-color:#0ff;
-}
-
-#play.playing{
-background:#000;
-color:#0ff;
-border-color:#0ff;
-}
-
-.top-controls,
-.point-controls{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin:18px 0;
-}
-
-.top-controls button,
-.top-controls select,
-.point-controls button,
-.side-button{
-width:82px;
-min-width:82px;
-height:40px;
-text-align:center;
-padding:8px 0;
-}
-
-.fm-block{
-display:grid;
-grid-template-columns:82px 1fr;
-gap:12px;
-align-items:start;
-margin:18px 0;
-}
-
-.fm-controls{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:12px;
-}
-
-.fm-controls label{
-display:grid;
-gap:6px;
-font-size:12px;
-min-width:0;
-padding:0;
-border:none;
-background:none;
-}
-
-.delay-block{
-display:grid;
-grid-template-columns:82px 82px 1fr;
-gap:12px;
-align-items:center;
-margin:18px 0;
-}
-
-.delay-time-wrap select{
-width:82px;
-min-width:82px;
-height:40px;
-text-align:center;
-text-align-last:center;
-padding:8px 0;
-}
-
-.delay-controls{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:12px;
-align-items:center;
-}
-
-.delay-controls label{
-display:grid;
-gap:6px;
-font-size:12px;
-min-width:0;
-padding:0;
-border:none;
-background:none;
-}
-
-.info{
-display:flex;
-gap:24px;
-flex-wrap:wrap;
-margin-bottom:24px;
-font-size:13px;
-}
-
-.grid{display:grid;gap:10px}
-
-.track{
-display:grid;
-grid-template-columns:90px repeat(16,1fr);
-gap:6px;
-align-items:center;
-}
-
-.step{
-aspect-ratio:1;
-border:1px solid #444;
-border-radius:50%;
-transition:.05s;
-cursor:pointer;
-position:relative;
-z-index:2;
-touch-action:none;
-user-select:none;
-}
-
-.step.on{background:#eee}
-.step.long{background:#0ff;border-color:#0ff}
-
-.step.play{
-outline:2px solid #0ff;
-outline-offset:2px;
-transform:scale(1.08);
-z-index:3;
-}
-
-.step.repeat{border-color:#0ff}
-
-.repeat-ui{margin:32px 0}
-
-.repeat-row{
-display:grid;
-grid-template-columns:90px 1fr;
-gap:6px;
-align-items:center;
-}
-
-.repeat-grid{
-display:grid;
-grid-template-columns:repeat(16,1fr);
-gap:6px;
-}
-
-.repeat-cell{
-height:22px;
-border:1px solid #333;
-}
-
-.repeat-cell.point1{background:#102030;border-color:#0ff}
-.repeat-cell.point2{background:#301020;border-color:#f0f}
-.repeat-cell.point3{background:#203010;border-color:#ff0}
-.repeat-cell.now{background:#fff}
-
-input[type="range"]{
--webkit-appearance:none;
-appearance:none;
-background:transparent;
-border:none;
-padding:0;
-height:22px;
-width:100%;
-}
-
-input[type="range"]::-webkit-slider-runnable-track{
-height:8px;
-background:#222;
-border:1px solid #444;
-border-radius:999px;
-}
-
-input[type="range"]::-webkit-slider-thumb{
--webkit-appearance:none;
-appearance:none;
-width:22px;
-height:22px;
-margin-top:-8px;
-background:#0ff;
-border:none;
-border-radius:50%;
-}
-
-input[type="range"]::-moz-range-track{
-height:8px;
-background:#222;
-border:1px solid #444;
-border-radius:999px;
-}
-
-input[type="range"]::-moz-range-thumb{
-width:22px;
-height:22px;
-background:#0ff;
-border:none;
-border-radius:50%;
-}
-
-.collapse-source{
-opacity:0;
-pointer-events:none;
-}
-
-.physics-piece{
-position:fixed;
-left:0;
-top:0;
-z-index:9999;
-margin:0 !important;
-box-sizing:border-box;
-pointer-events:none;
-will-change:transform;
-}
-
-/*.physics-piece.step{
-background:#0ff !important;
-border-color:#0ff !important;
-outline:none !important;
-}*/
-
-.physics-piece label{
-pointer-events:none;
-}
-
-@media (max-width:700px){
-body{padding:14px}
-h1{font-size:20px;margin:0 0 10px}
-
-.top-controls{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:8px;
-margin:0 0 10px;
-}
-
-.top-controls button,
-.top-controls select{
-width:100%;
-min-width:0;
-height:38px;
-font-size:13px;
-padding:7px 6px;
-text-align:center;
-}
-
-#bpm{
-text-align:center;
-text-align-last:center;
-}
-
-#melodyLock{font-size:11px}
-
-.point-controls{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:8px;
-margin:0 0 10px;
-}
-
-.point-controls button{
-width:100%;
-min-width:0;
-height:34px;
-font-size:13px;
-padding:6px 0;
-}
-
-.fm-block{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:8px;
-margin:0 0 10px;
-}
-
-#autoFm{
-grid-column:1;
-width:100%;
-min-width:0;
-height:36px;
-font-size:12px;
-padding:6px 0;
-margin:0 0 10px 0;
-}
-
-.fm-controls{
-grid-column:1 / -1;
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
-}
-
-.fm-controls label{
-font-size:11px;
-gap:4px;
-}
-
-
-.delay-block{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:8px;
-align-items:center;
-margin:0 0 20px;
-}
-
-#delayToggle{
-grid-column:1;
-width:100%;
-min-width:0;
-height:36px;
-font-size:12px;
-padding:6px 0;
-margin:0;
-}
-
-.delay-time-wrap{
-grid-column:2;
-}
-
-.delay-time-wrap select{
-width:100%;
-min-width:0;
-height:36px;
-font-size:12px;
-padding:6px 0;
-text-align:center;
-text-align-last:center;
-}
-
-.delay-controls{
-grid-column:3 / -1;
-display:grid;
-grid-template-columns:1fr;
-gap:0;
-align-items:center;
-}
-
-.delay-controls label{
-font-size:11px;
-gap:4px;
-}
-
-.info{
-gap:10px;
-font-size:11px;
-margin-bottom:10px;
-}
-
-.repeat-ui{margin:10px 0}
-
-.repeat-row{
-grid-template-columns:52px 1fr;
-gap:4px;
-}
-
-.repeat-grid{gap:4px}
-
-.repeat-cell{height:16px}
-
-.track{
-grid-template-columns:52px repeat(16,1fr);
-gap:4px;
-}
-
-.grid{gap:8px}
-}
-
-@media (max-width:700px) and (orientation:landscape){
-body{padding:10px 14px}
-h1{font-size:18px;margin-bottom:8px}
-
-.top-controls,
-.point-controls,
-.fm-block,
-.delay-block{
-margin-bottom:8px;
-}
-
-#bpm{
-padding-left:0;
-padding-right:0;
-text-align:center;
-text-align-last:center;
-}
-
-#bpm,
-#delayTime{
--webkit-appearance:menulist;
-appearance:auto;
-text-align:center;
-text-align-last:center;
-}
-
-.repeat-ui{margin:8px 0}
-}
-</style>
-</head>
-
-<body>
-<div class="wrap">
-
-<h1>GRID FM MACHINE</h1>
-
-<div class="top-controls">
-<button id="play">PLAY</button>
-<button id="random">RAND</button>
-
-<select id="bpm">
-<option>80</option>
-<option>100</option>
-<option>120</option>
-<option>144</option>
-<option selected>160</option>
-<option>192</option>
-<option>240</option>
-<option value="inf">∞</option>
-</select>
-
-<button id="melodyLock">NOTES</button>
-</div>
-
-<div class="point-controls">
-<button id="repeat0" class="point-button">0</button>
-<button id="repeat1" class="point-button">1</button>
-<button id="repeat2" class="point-button">2</button>
-<button id="repeat3" class="point-button">3</button>
-</div>
-
-<div class="fm-block">
-<button id="autoFm" class="side-button">AUTO FM</button>
-
-<div class="fm-controls">
-<label>FM RATIO<input id="ratio" type="range" min="0.5" max="12" step="0.5"></label>
-<label>MOD AMOUNT<input id="modAmount" type="range" min="20" max="1600" step="10"></label>
-<label>DECAY<input id="decay" type="range" min="0.01" max="1.2" step="0.01" value="0.605"></label>
-<label>LONG NOTE<input id="longChance" type="range" min="0" max="0.8" step="0.01"></label>
-</div>
-</div>
-
-<div class="delay-block">
-<button id="delayToggle" class="side-button">DELAY</button>
-
-<div class="delay-time-wrap">
-<select id="delayTime">
-<option value="0.125">1/32</option>
-<option value="0.25">1/16</option>
-<option value="0.166">1/16T</option>
-<option selected  value="0.5">1/8</option>
-<option value="0.333">1/8T</option>
-<option value="0.75">1/8D</option>
-<option value="1">1/4</option>
-<option value="1.5">1/4D</option>
-</select>
-</div>
-
-<div class="delay-controls">
-<label>FB<input id="delayFeedback" type="range" min="0" max="0.82" step="0.01" value="0"></label>
-<input id="delayMix" type="hidden" value="1">
-</div>
-</div>
-
-<div class="info">
-<div>BPM: <span id="bpmView">160</span></div>
-<div>STEP: <span id="stepView">-</span></div>
-<div>BAR: <span id="barView">1 / 8</span></div>
-</div>
-
-<div class="repeat-ui">
-<div class="repeat-row">
-<div></div>
-<div id="repeatGrid" class="repeat-grid"></div>
-</div>
-</div>
-
-<div id="grid" class="grid"></div>
-
-</div>
-
-<script>
-const steps=16,totalBars=8,collapseBars=1;
-let ctx,timer,playing=false,step=-1,barIndex=0;
-let repeatPointCount=0,repeatEvents=[],currentRepeat=null,currentRepeatCount=0;
-let autoFm=false,delayOn=false,melodyLock=false;
-let autoFmBar=-1;
-let masterGain=null,dryGain=null,delayNode=null,delayFeedbackGain=null,delayWetGain=null,delayFilter=null;
-
-let collapseMode=false;
-let collapseObjects=[];
-let collapseRaf=null;
-
-const bpmSelect=document.getElementById("bpm");
-const bpmView=document.getElementById("bpmView");
-const stepView=document.getElementById("stepView");
-const barView=document.getElementById("barView");
-
-const ratioControl=document.getElementById("ratio");
-const modAmountControl=document.getElementById("modAmount");
-const decayControl=document.getElementById("decay");
-const longChanceControl=document.getElementById("longChance");
-const autoFmButton=document.getElementById("autoFm");
-const melodyLockButton=document.getElementById("melodyLock");
-
-const delayToggle=document.getElementById("delayToggle");
-const delayTimeSelect=document.getElementById("delayTime");
-const delayFeedbackControl=document.getElementById("delayFeedback");
-const delayMixControl=document.getElementById("delayMix");
-
-const repeatGrid=document.getElementById("repeatGrid");
-const grid=document.getElementById("grid");
-
-const scale=[110,123.47,146.83,164.81,196,220,246.94,293.66,329.63,392,440,493.88,587.33];
-
-const tracks=[
-{name:"FM 1",hits:5,shift:1,gain:.22,long:false},
-{name:"FM 2",hits:7,shift:3,gain:.18,long:false},
-{name:"FM 3",hits:2,shift:1,gain:.20,long:true},
-{name:"BASS",hits:3,shift:2,gain:.34,long:true},
-{name:"CLICK",hits:11,shift:5,gain:.09,long:false}
-];
-
-let patterns=[],longNotes=[],notePatterns=[];
-
-function rand(min,max){return min+Math.random()*(max-min)}
-function choose(a){return a[Math.floor(Math.random()*a.length)]}
-function euclid(n,k){let p=[];for(let i=0;i<n;i++)p.push((i*k)%n<k?1:0);return p}
-function rotate(p,r){return p.map((_,i)=>p[(i-r+p.length)%p.length])}
-
-function getBpm(){
-return bpmSelect.value==="inf"?160:Number(bpmSelect.value);
-}
-
-function getBarLimit(){
-return bpmSelect.value==="inf"?collapseBars:totalBars;
-}
-
-function initControls(){
-repeatPointCount=choose([0,1,2,3]);
-
-document.querySelectorAll(".point-button").forEach(b=>b.classList.remove("active"));
-document.getElementById(`repeat${repeatPointCount}`).classList.add("active");
-
-ratioControl.value=choose([.5,1,1.5,2,2.5,3,4,5,6,8]);
-modAmountControl.value=Math.round(rand(180,900)/10)*10;
-decayControl.value=0.605;
-longChanceControl.value=rand(.08,.36).toFixed(2);
-
-delayFeedbackControl.value=0;
-delayMixControl.value=1;
-}
-
-function makeNotePatterns(){
-notePatterns=tracks.map(t=>{
-return Array.from({length:steps},()=>{
-return t.name==="BASS"
-? choose(scale.slice(0,5))/2
-: choose(scale);
-});
-});
-}
-
-function makePatterns(){
-patterns=tracks.map(t=>rotate(euclid(steps,t.hits),Math.floor(rand(0,steps))));
-makeNotePatterns();
-makeLongNotes();
-decideRepeatEvents();
-render();
-}
-
-function makeLongNotes(){
-longNotes=tracks.map((t,ti)=>Array.from({length:steps},(_,i)=>{
-if(!t.long||!patterns[ti][i])return 0;
-return Math.random()<Number(longChanceControl.value)?choose([4,6,8,12]):0;
-}));
-}
-
-function findFreeSegments(occupied){
-const segments=[];
-let start=null;
-
-for(let i=0;i<steps;i++){
-if(!occupied[i]&&start===null)start=i;
-
-if((occupied[i]||i===steps-1)&&start!==null){
-const end=occupied[i]?i-1:i;
-segments.push({start,end,length:end-start+1});
-start=null;
-}
-}
-
-return segments;
-}
-
-function decideRepeatEvents(){
-repeatEvents=[];
-currentRepeat=null;
-currentRepeatCount=0;
-
-const occupied=Array(steps).fill(false);
-
-for(let n=0;n<repeatPointCount;n++){
-const remainingSlots=steps-occupied.filter(Boolean).length;
-const remainingEvents=repeatPointCount-n;
-
-if(remainingSlots<remainingEvents*2)break;
-
-const freeSegments=findFreeSegments(occupied).filter(s=>s.length>=2);
-if(!freeSegments.length)break;
-
-const seg=choose(freeSegments);
-const maxLen=Math.min(8,seg.length-(remainingEvents-1)*2);
-const possibleLengths=[2,3,4,6,7,8].filter(l=>l<=maxLen);
-const length=choose(possibleLengths.length?possibleLengths:[2]);
-
-const possibleStarts=[];
-
-for(let i=seg.start;i<=seg.end-length+1;i++){
-let ok=true;
-for(let j=0;j<length;j++)if(occupied[i+j])ok=false;
-if(ok)possibleStarts.push(i);
-}
-
-const startStep=choose(possibleStarts);
-
-for(let j=0;j<length;j++)occupied[startStep+j]=true;
-
-let repeats;
-if(length===2)repeats=choose([5,6,7,8,9]);
-else if(length===3)repeats=choose([4,5,6,7]);
-else if(length===4)repeats=choose([3,4,5,6]);
-else if(length===8)repeats=choose([2,3,4]);
-else repeats=choose([2,3]);
-
-repeatEvents.push({startStep,length,repeats,color:n+1});
-}
-
-while(repeatEvents.length<repeatPointCount){
-const used=repeatEvents.map(e=>e.startStep);
-const candidates=[];
-for(let i=0;i<steps-1;i++)if(!used.includes(i))candidates.push(i);
-if(!candidates.length)break;
-
-repeatEvents.push({
-startStep:choose(candidates),
-length:2,
-repeats:choose([4,5,6,7]),
-color:repeatEvents.length+1
-});
-}
-
-repeatEvents.sort((a,b)=>a.startStep-b.startStep);
-}
-
-function isRepeatStep(i){
-return repeatEvents.some(ev=>i>=ev.startStep&&i<ev.startStep+ev.length);
-}
-
-function isStrongStep(i){
-return [0,4,8,12].includes(i);
-}
-
-function renderRepeatGrid(){
-repeatGrid.innerHTML="";
-
-for(let i=0;i<steps;i++){
-const cell=document.createElement("div");
-cell.className="repeat-cell";
-
-if(playing&&i===step)cell.classList.add("now");
-
-repeatEvents.forEach(ev=>{
-if(i>=ev.startStep&&i<ev.startStep+ev.length)cell.classList.add(`point${ev.color}`);
-});
-
-repeatGrid.appendChild(cell);
-}
-}
-
-function toggleStep(ti,i){
-if(collapseMode)return;
-
-patterns[ti][i]=patterns[ti][i]?0:1;
-
-if(!patterns[ti][i]){
-longNotes[ti][i]=0;
-}else if(tracks[ti].long&&Math.random()<Number(longChanceControl.value)){
-longNotes[ti][i]=choose([4,6,8,12]);
-}
-
-render();
-}
-
-function render(){
-grid.innerHTML="";
-
-tracks.forEach((t,ti)=>{
-const row=document.createElement("div");
-row.className="track";
-
-const label=document.createElement("div");
-label.textContent=t.name;
-row.appendChild(label);
-
-for(let i=0;i<steps;i++){
-const s=document.createElement("div");
-s.className="step";
-s.dataset.track=t.name;
-
-s.addEventListener("pointerdown",e=>{
-e.preventDefault();
-toggleStep(ti,i);
-});
-
-if(patterns[ti][i])s.classList.add("on");
-if(longNotes[ti][i])s.classList.add("long");
-if(playing&&i===step)s.classList.add("play");
-
-repeatEvents.forEach(ev=>{
-if(i>=ev.startStep&&i<ev.startStep+ev.length)s.classList.add("repeat");
-});
-
-row.appendChild(s);
-}
-
-grid.appendChild(row);
-});
-
-renderRepeatGrid();
-bpmView.textContent=bpmSelect.value==="inf"?"∞":bpmSelect.value;
-stepView.textContent=
-playing
-? String(step + 1).padStart(2,"0")
-: "--";
-barView.textContent=`${barIndex+1} / ${getBarLimit()}`;
-}
-
-function setupAudioGraph(){
-if(masterGain)return;
-
-masterGain=ctx.createGain();
-dryGain=ctx.createGain();
-delayNode=ctx.createDelay(2.5);
-delayFeedbackGain=ctx.createGain();
-delayWetGain=ctx.createGain();
-delayFilter=ctx.createBiquadFilter();
-
-masterGain.gain.value=.9;
-dryGain.gain.value=1;
-delayFilter.type="lowpass";
-delayFilter.frequency.value=5200;
-
-masterGain.connect(dryGain);
-dryGain.connect(ctx.destination);
-masterGain.connect(delayNode);
-delayNode.connect(delayFilter);
-delayFilter.connect(delayWetGain);
-delayWetGain.connect(ctx.destination);
-delayFilter.connect(delayFeedbackGain);
-delayFeedbackGain.connect(delayNode);
-
-updateDelay();
-}
-
-function updateDelay(){
-if(!delayNode)return;
-
-const division=Number(delayTimeSelect.value);
-const bpm=getBpm();
-const now=ctx.currentTime;
-const delaySeconds=Math.max(.001,(60/bpm)*division);
-
-delayNode.delayTime.cancelScheduledValues(now);
-delayNode.delayTime.setTargetAtTime(delaySeconds,now,.03);
-
-delayWetGain.gain.setTargetAtTime(delayOn?Number(delayMixControl.value):0,now,.03);
-delayFeedbackGain.gain.setTargetAtTime(delayOn?Number(delayFeedbackControl.value):0,now,.03);
-}
-
-function autoFmMove(){
-
-if(!autoFm)return;
-
-if(step!==0)return;
-
-if(autoFmBar===barIndex)return;
-
-autoFmBar=barIndex;
-
-ratioControl.value=choose([
-.5,1,1.5,2,2.5,3,4,5,6,8
-]);
-
-modAmountControl.value=choose([
-180,240,320,420,560,720,900
-]);
-
-decayControl.value=choose([
-.06,.08,.12,.16,.22,.3,.42,.6
-]);
-
-longChanceControl.value=choose([
-.08,.12,.18,.24,.32,.42
-]);
-
-makeLongNotes();
-}
-
-function fm(freq,time,dur,gainValue,isLong=false){
-const ratio=Number(ratioControl.value);
-const modAmount=Number(modAmountControl.value);
-
-const carrier=ctx.createOscillator();
-const mod=ctx.createOscillator();
-const modGain=ctx.createGain();
-const amp=ctx.createGain();
-const filter=ctx.createBiquadFilter();
-
-carrier.type="sine";
-mod.type="sine";
-carrier.frequency.value=freq;
-mod.frequency.value=freq*ratio;
-
-modGain.gain.setValueAtTime(modAmount,time);
-modGain.gain.exponentialRampToValueAtTime(1,time+dur);
-
-filter.type="lowpass";
-filter.frequency.setValueAtTime(isLong?rand(300,1200):rand(800,9000),time);
-
-amp.gain.setValueAtTime(.0001,time);
-amp.gain.exponentialRampToValueAtTime(gainValue,time+.01);
-amp.gain.exponentialRampToValueAtTime(.0001,time+dur);
-
-mod.connect(modGain);
-modGain.connect(carrier.frequency);
-carrier.connect(filter);
-filter.connect(amp);
-amp.connect(masterGain);
-
-mod.start(time);
-carrier.start(time);
-mod.stop(time+dur);
-carrier.stop(time+dur);
-}
-
-function noise(time,dur,gainValue){
-const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*dur),ctx.sampleRate);
-const data=buffer.getChannelData(0);
-
-for(let i=0;i<data.length;i++){
-const t=i/data.length;
-data[i]=(Math.random()*2-1)*Math.pow(1-t,2.2);
-}
-
-const src=ctx.createBufferSource();
-const gain=ctx.createGain();
-const filter=ctx.createBiquadFilter();
-
-src.buffer=buffer;
-
-const clickFreq=choose([1600,2200,3200,4500,7000]);
-
-filter.type="bandpass";
-filter.frequency.setValueAtTime(clickFreq,time);
-filter.Q.setValueAtTime(8,time);
-
-gain.gain.setValueAtTime(gainValue,time);
-gain.gain.exponentialRampToValueAtTime(0.0001,time+dur);
-
-src.connect(filter);
-filter.connect(gain);
-gain.connect(masterGain);
-
-const osc=ctx.createOscillator();
-const oscGain=ctx.createGain();
-
-osc.type="sine";
-osc.frequency.setValueAtTime(choose([1200,1800,2400]),time);
-osc.frequency.exponentialRampToValueAtTime(choose([300,500,700]),time+.018);
-
-oscGain.gain.setValueAtTime(gainValue*.35,time);
-oscGain.gain.exponentialRampToValueAtTime(0.0001,time+.018);
-
-osc.connect(oscGain);
-oscGain.connect(masterGain);
-
-src.start(time);
-src.stop(time+dur);
-
-osc.start(time);
-osc.stop(time+.018);
-}
-
-function getFreq(t,ti){
-if(melodyLock){
-return notePatterns[ti][step];
-}
-
-return t.name==="BASS"
-? choose(scale.slice(0,5))/2
-: choose(scale);
-}
-
-function playStep(){
-const stepDur=60/getBpm()/4;
-
-tracks.forEach((t,ti)=>{
-if(!patterns[ti][step])return;
-
-const now=ctx.currentTime;
-const longLen=longNotes[ti][step];
-
-if(t.name==="CLICK"){
-noise(now,.02,t.gain);
-return;
-}
-if(longLen){
-const dur=stepDur*longLen;
-fm(getFreq(t,ti),now,dur,t.gain,true);
-return;
-}
-
-const dur=rand(.03,Number(decayControl.value));
-fm(getFreq(t,ti),now,dur,t.gain);
-});
-}
-
-function handleRepeats(){
-if(currentRepeat){
-if(step===currentRepeat.startStep+currentRepeat.length){
-currentRepeatCount++;
-
-if(currentRepeatCount<currentRepeat.repeats){
-step=currentRepeat.startStep;
-return;
-}else{
-currentRepeat=null;
-}
-}
-}else{
-repeatEvents.forEach(ev=>{
-if(step===ev.startStep+ev.length){
-currentRepeat=ev;
-currentRepeatCount=1;
-step=ev.startStep;
-}
-});
-}
-}
-
-function tick(){
-if(collapseMode)return;
-if(step<0)step=0;
-
-updateDelay();
-autoFmMove();
-playStep();
-render();
-
-step++;
-handleRepeats();
-
-if(step>=steps){
-step=0;
-barIndex++;
-
-if(bpmSelect.value==="inf"&&barIndex>=collapseBars){
-startCollapse();
-return;
-}
-
-if(bpmSelect.value!=="inf"&&barIndex>=totalBars){
-barIndex=0;
-makePatterns();
-}
-}
-
-timer=setTimeout(tick,(60/getBpm()/4)*1000);
-}
-
-
-
-
-function startCollapse(){
-if(collapseMode)return;
-
-document.querySelectorAll(".physics-piece").forEach(el=>el.remove());
-collapseObjects=[];
-
-collapseMode=true;
-playing=false;
-clearTimeout(timer);
-
-document.getElementById("play").textContent="PLAY";
-document.getElementById("play").classList.remove("playing");
-
-const targets=[
-...document.querySelectorAll(".top-controls button"),
-...document.querySelectorAll(".top-controls select"),
-...document.querySelectorAll(".point-controls button"),
-document.getElementById("autoFm"),
-...document.querySelectorAll(".fm-controls label"),
-document.getElementById("delayToggle"),
-document.querySelector(".delay-time-wrap"),
-...document.querySelectorAll(".delay-controls label"),
-...document.querySelectorAll(".repeat-cell"),
-...document.querySelectorAll(".step")
-].filter(Boolean);
-
-targets.forEach(el=>{
-const track=el.dataset?.track||"";
-if(track==="CLICK")return;
-
-const rect=el.getBoundingClientRect();
-const clone=el.cloneNode(true);
-
-clone.classList.add("physics-piece");
-
-if(el.classList.contains("step")){
-clone.classList.add("step");
-clone.dataset.track=el.dataset.track||"FM";
-}
-
-clone.style.width=rect.width+"px";
-clone.style.height=rect.height+"px";
-clone.style.transform=`translate(${rect.left}px,${rect.top}px)`;
-
-document.body.appendChild(clone);
-
-collapseObjects.push({
-el:clone,
-x:rect.left,
-y:rect.top,
-w:rect.width,
-h:rect.height,
-vx:rand(-3,3),
-vy:rand(-6,-1),
-cool:0,
-type:el.classList.contains("step")?"step":"ui",
-track:el.dataset.track||"",
-hitPower:1
-});
-});
-
-document.querySelector(".wrap").classList.add("collapse-source");
-
-collapseLoop();
-
-setTimeout(()=>{
-document.body.addEventListener("pointerdown",restartMachine,{once:true});
-},1000);
-}
-
-function restartMachine(){
-cancelAnimationFrame(collapseRaf);
-
-collapseObjects.forEach(o=>{
-o.el.style.transition="opacity .8s ease, transform .8s ease";
-o.el.style.opacity="0";
-o.el.style.transform+=" scale(.6)";
-});
-
-setTimeout(()=>{
-document.querySelectorAll(".physics-piece").forEach(el=>el.remove());
-collapseObjects=[];
-
-const wrap=document.querySelector(".wrap");
-
-wrap.style.transition="none";
-wrap.style.opacity="0";
-wrap.classList.remove("collapse-source");
-
-requestAnimationFrame(()=>{
-requestAnimationFrame(()=>{
-wrap.style.transition="opacity 1.2s ease";
-wrap.style.opacity="1";
-setTimeout(()=>{
-wrap.style.transition="";
-wrap.style.opacity="";
-},1300);
-});
-});
-
-collapseMode=false;
-step=-1;
-barIndex=0;
-currentRepeat=null;
-currentRepeatCount=0;
-
-bpmSelect.value="160";
-bpmView.textContent="160";
-autoFmBar=-1;
-
-makePatterns();
-render();
-updateDelay();
-
-},800);
-}
-
-function collapseLoop(){
-const gravity=.28;
-const bounce=1.12;
-const friction=.999;
-const floor=window.innerHeight-4;
-const wall=window.innerWidth-4;
-
-collapseObjects.forEach(o=>{
-o.vy+=gravity;
-o.vx*=friction;
-
-o.x+=o.vx;
-o.y+=o.vy;
-
-let hit=false;
-
-if(o.x<0){
-o.x=0;
-o.vx=Math.abs(o.vx)*bounce;
-hit=true;
-}
-
-if(o.x+o.w>wall){
-o.x=wall-o.w;
-o.vx=-Math.abs(o.vx)*bounce;
-hit=true;
-}
-
-if(o.y+o.h>floor){
-
-if(o.type==="step"){
-o.y=floor-o.h;
-// o.vy=-Math.abs(o.vy)*bounce;
-o.hitPower=Math.min(o.hitPower*1.08,3);
-
-o.vy=-Math.abs(o.vy)*bounce*o.hitPower;
-o.vx*=.99;
-
-o.vx+=rand(-2,2)*o.hitPower;
-o.vy-=rand(0,2)*o.hitPower;
-o.vx*=.99;
-o.vx+=rand(-2,2);
-o.vy-=rand(0,2);
-hit=true;
-}else{
-/* UIパーツは床を抜けて落ちる */
-if(o.y>window.innerHeight+300){
-o.el.remove();
-o.dead=true;
-}
-}
-
-}
-
-collapseObjects=collapseObjects.filter(o=>!o.dead);
-
-if(hit)collapseHitSound(o);
-if(o.cool>0)o.cool--;
-
-o.el.style.transform=`translate(${o.x}px,${o.y}px)`;
-});
-
-for(let i=0;i<collapseObjects.length;i++){
-for(let j=i+1;j<collapseObjects.length;j++){
-const a=collapseObjects[i];
-const b=collapseObjects[j];
-
-if(
-a.x<b.x+b.w &&
-a.x+a.w>b.x &&
-a.y<b.y+b.h &&
-a.y+a.h>b.y
-){
-resolveCollision(a,b);
-}
-}
-}
-
-collapseRaf=requestAnimationFrame(collapseLoop);
-}
-
-function resolveCollision(a,b){
-const ax=a.x+a.w/2;
-const ay=a.y+a.h/2;
-const bx=b.x+b.w/2;
-const by=b.y+b.h/2;
-
-const dx=ax-bx;
-const dy=ay-by;
-
-const overlapX=(a.w+b.w)/2-Math.abs(dx);
-const overlapY=(a.h+b.h)/2-Math.abs(dy);
-
-if(overlapX<=0||overlapY<=0)return;
-
-if(overlapX<overlapY){
-const push=overlapX/2;
-
-if(dx>0){
-a.x+=push;
-b.x-=push;
-}else{
-a.x-=push;
-b.x+=push;
-}
-
-const av=a.vx;
-a.vx=b.vx*.8;
-b.vx=av*.8;
-}else{
-const push=overlapY/2;
-
-if(dy>0){
-a.y+=push;
-b.y-=push;
-}else{
-a.y-=push;
-b.y+=push;
-}
-
-const av=a.vy;
-a.vy=b.vy*.8;
-b.vy=av*.8;
-}
-
-collapseHitSound(a);
-collapseHitSound(b);
-}
-
-function collapseHitSound(o){
-if(!ctx||!masterGain)return;
-if(o.cool>0)return;
-
-const speed=Math.sqrt(o.vx*o.vx+o.vy*o.vy);
-if(speed<2.2)return;
-
-o.cool=10;
-
-const now=ctx.currentTime;
-const gain=Math.min(.18,speed*.018);
-
-if(o.track==="CLICK"){
-return;
-}
-
-if(o.type==="step"){
-const freq=o.track==="BASS"
-? choose(scale.slice(0,5))/2
-: choose(scale);
-
-fm(freq,now,rand(.04,.18),gain,o.track==="FM 3"||o.track==="BASS");
-}else{
-return;
-}
-}
-
-document.getElementById("play").onclick=async()=>{
-if(collapseMode)return;
-
-if(!ctx){
-ctx=new (window.AudioContext||window.webkitAudioContext)();
-setupAudioGraph();
-}
-
-await ctx.resume();
-
-playing=!playing;
-
-document.getElementById("play").classList.toggle("playing",playing);
-
-if(playing){
-if(step<0)step=0;
-document.getElementById("play").textContent="STOP";
-tick();
-}else{
-document.getElementById("play").textContent="PLAY";
-clearTimeout(timer);
-render();
-}
-};
-
-document.getElementById("random").onclick=()=>{
-if(collapseMode)return;
-
-const btn=document.getElementById("random");
-
-btn.classList.add("active");
-
-setTimeout(()=>{
-btn.classList.remove("active");
-},120);
-
-tracks.forEach(t=>{
-t.hits=Math.floor(rand(2,12));
-t.shift=Math.floor(rand(1,8));
-});
-
-/* FMパラメータもランダム */
-ratioControl.value=choose([
-.5,1,1.5,2,2.5,3,4,5,6,8
-]);
-
-modAmountControl.value=Math.round(rand(180,1400)/10)*10;
-
-decayControl.value=rand(.04,.6).toFixed(2);
-
-longChanceControl.value=rand(.05,.5).toFixed(2);
-
-makePatterns();
-};
-
-function setRepeatMode(n){
-if(collapseMode)return;
-
-repeatPointCount=n;
-currentRepeat=null;
-currentRepeatCount=0;
-
-document.querySelectorAll(".point-button").forEach(b=>b.classList.remove("active"));
-document.getElementById(`repeat${n}`).classList.add("active");
-
-decideRepeatEvents();
-render();
-}
-
-document.getElementById("repeat0").onclick=()=>setRepeatMode(0);
-document.getElementById("repeat1").onclick=()=>setRepeatMode(1);
-document.getElementById("repeat2").onclick=()=>setRepeatMode(2);
-document.getElementById("repeat3").onclick=()=>setRepeatMode(3);
-
-autoFmButton.onclick=()=>{
-if(collapseMode)return;
-autoFm=!autoFm;
-autoFmButton.classList.toggle("active",autoFm);
-};
-
-melodyLockButton.onclick=()=>{
-if(collapseMode)return;
-melodyLock=!melodyLock;
-melodyLockButton.classList.toggle("active",melodyLock);
-};
-
-delayToggle.onclick=()=>{
-if(collapseMode)return;
-delayOn=!delayOn;
-delayToggle.classList.toggle("active",delayOn);
-updateDelay();
-};
-
-longChanceControl.addEventListener("input",()=>{
-makeLongNotes();
-render();
-});
-
-delayTimeSelect.addEventListener("change",updateDelay);
-delayFeedbackControl.addEventListener("input",updateDelay);
-bpmSelect.addEventListener("change",()=>{
-barIndex=0;
-render();
-updateDelay();
-});
-
-initControls();
-makePatterns();
-</script>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GRID FM MACHINE</title>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #050505;
+        color: #eee;
+        font-family: monospace;
+      }
+      body {
+        padding: 24px;
+        overflow-x: hidden;
+      }
+      .wrap {
+        max-width: 1200px;
+        margin: auto;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 18px;
+      }
+
+      button,
+      select,
+      input {
+        font: inherit;
+        background: #000;
+        color: #eee;
+        border: 1px solid #555;
+        padding: 8px 14px;
+        border-radius: 999px;
+        touch-action: manipulation;
+      }
+
+      button.active {
+        background: #0ff;
+        color: #000;
+        border-color: #0ff;
+      }
+
+      #play.playing {
+        background: #000;
+        color: #0ff;
+        border-color: #0ff;
+      }
+
+      .top-controls,
+      .point-controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+
+      .top-controls button,
+      .top-controls select,
+      .point-controls button,
+      .side-button {
+        width: 82px;
+        min-width: 82px;
+        height: 40px;
+        text-align: center;
+        padding: 8px 0;
+      }
+
+      .fm-block {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin: 18px 0;
+      }
+
+      .fm-controls {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .fm-controls label {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        background: none;
+      }
+
+      .delay-block {
+        display: grid;
+        grid-template-columns: 82px 82px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin: 18px 0;
+      }
+
+      .delay-time-wrap select {
+        width: 82px;
+        min-width: 82px;
+        height: 40px;
+        text-align: center;
+        text-align-last: center;
+        padding: 8px 0;
+      }
+
+      .delay-controls {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+
+      .delay-controls label {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        min-width: 0;
+        padding: 0;
+        border: none;
+        background: none;
+      }
+
+      .info {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+        font-size: 13px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .track {
+        display: grid;
+        grid-template-columns: 90px repeat(16, 1fr);
+        gap: 6px;
+        align-items: center;
+      }
+
+      .step {
+        aspect-ratio: 1;
+        border: 1px solid #444;
+        border-radius: 50%;
+        transition: 0.05s;
+        cursor: pointer;
+        position: relative;
+        z-index: 2;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .step.on {
+        background: #eee;
+      }
+      .step.long {
+        background: #0ff;
+        border-color: #0ff;
+      }
+
+      .step.play {
+        outline: 2px solid #0ff;
+        outline-offset: 2px;
+        transform: scale(1.08);
+        z-index: 3;
+      }
+
+      .step.repeat {
+        border-color: #0ff;
+      }
+
+      .repeat-ui {
+        margin: 32px 0;
+      }
+
+      .repeat-row {
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .repeat-grid {
+        display: grid;
+        grid-template-columns: repeat(16, 1fr);
+        gap: 6px;
+      }
+
+      .repeat-cell {
+        height: 22px;
+        border: 1px solid #333;
+      }
+
+      .repeat-cell.point1 {
+        background: #102030;
+        border-color: #0ff;
+      }
+      .repeat-cell.point2 {
+        background: #301020;
+        border-color: #f0f;
+      }
+      .repeat-cell.point3 {
+        background: #203010;
+        border-color: #ff0;
+      }
+      .repeat-cell.now {
+        background: #fff;
+      }
+
+      input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        border: none;
+        padding: 0;
+        height: 22px;
+        width: 100%;
+      }
+
+      input[type='range']::-webkit-slider-runnable-track {
+        height: 8px;
+        background: #222;
+        border: 1px solid #444;
+        border-radius: 999px;
+      }
+
+      input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        margin-top: -8px;
+        background: #0ff;
+        border: none;
+        border-radius: 50%;
+      }
+
+      input[type='range']::-moz-range-track {
+        height: 8px;
+        background: #222;
+        border: 1px solid #444;
+        border-radius: 999px;
+      }
+
+      input[type='range']::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        background: #0ff;
+        border: none;
+        border-radius: 50%;
+      }
+
+      .collapse-source {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .physics-piece {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 9999;
+        margin: 0 !important;
+        box-sizing: border-box;
+        pointer-events: none;
+        will-change: transform;
+      }
+
+      .physics-piece label {
+        pointer-events: none;
+      }
+
+      @media (max-width: 700px) {
+        body {
+          padding: 14px;
+        }
+        h1 {
+          font-size: 20px;
+          margin: 6px 0 14px;
+        }
+
+        .top-controls {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin: 0 0 10px;
+        }
+
+        .top-controls button,
+        .top-controls select {
+          width: 100%;
+          min-width: 0;
+          height: 38px;
+          font-size: 13px;
+          padding: 7px 6px;
+          text-align: center;
+        }
+
+        #bpm {
+          text-align: center;
+          text-align-last: center;
+        }
+
+        #melodyLock {
+          font-size: 11px;
+        }
+
+        .point-controls {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin: 0 0 10px;
+        }
+
+        .point-controls button {
+          width: 100%;
+          min-width: 0;
+          height: 34px;
+          font-size: 13px;
+          padding: 6px 0;
+        }
+
+        .fm-block {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin: 0 0 10px;
+        }
+
+        #autoFm {
+          grid-column: 1;
+          width: 100%;
+          min-width: 0;
+          height: 36px;
+          font-size: 12px;
+          padding: 6px 0;
+          margin: 0 0 10px 0;
+        }
+
+        .fm-controls {
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+
+        .fm-controls label {
+          font-size: 11px;
+          gap: 4px;
+        }
+
+        .delay-block {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          align-items: center;
+          margin: 0 0 20px;
+        }
+
+        #delayToggle {
+          grid-column: 1;
+          width: 100%;
+          min-width: 0;
+          height: 36px;
+          font-size: 12px;
+          padding: 6px 0;
+          margin: 0;
+        }
+
+        .delay-time-wrap {
+          grid-column: 2;
+        }
+
+        .delay-time-wrap select {
+          width: 100%;
+          min-width: 0;
+          height: 36px;
+          font-size: 12px;
+          padding: 6px 0;
+          text-align: center;
+          text-align-last: center;
+        }
+
+        .delay-controls {
+          grid-column: 3 / -1;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0;
+          align-items: center;
+        }
+
+        .delay-controls label {
+          font-size: 11px;
+          gap: 4px;
+        }
+
+        .info {
+          gap: 10px;
+          font-size: 11px;
+          margin-bottom: 10px;
+        }
+
+        .repeat-ui {
+          margin: 10px 0;
+        }
+
+        .repeat-row {
+          grid-template-columns: 52px 1fr;
+          gap: 4px;
+        }
+
+        .repeat-grid {
+          gap: 4px;
+        }
+
+        .repeat-cell {
+          height: 16px;
+        }
+
+        .track {
+          grid-template-columns: 52px repeat(16, 1fr);
+          gap: 4px;
+        }
+
+        .grid {
+          gap: 8px;
+        }
+      }
+
+      @media (max-width: 700px) and (orientation: landscape) {
+        body {
+          padding: 10px 14px;
+        }
+        h1 {
+          font-size: 18px;
+          margin: 4px 0 10px;
+        }
+
+        .top-controls,
+        .point-controls,
+        .fm-block,
+        .delay-block {
+          margin-bottom: 8px;
+        }
+
+        #bpm {
+          padding-left: 0;
+          padding-right: 0;
+          text-align: center;
+          text-align-last: center;
+        }
+
+        #bpm,
+        #delayTime {
+          -webkit-appearance: menulist;
+          appearance: auto;
+          text-align: center;
+          text-align-last: center;
+        }
+
+        .repeat-ui {
+          margin: 8px 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <h1>GRID FM MACHINE</h1>
+
+      <div class="top-controls">
+        <button id="play">PLAY</button>
+        <button id="random">RAND</button>
+
+        <select id="bpm">
+          <option>80</option>
+          <option>100</option>
+          <option>120</option>
+          <option>144</option>
+          <option selected>160</option>
+          <option>192</option>
+          <option>240</option>
+          <option value="inf">∞</option>
+        </select>
+
+        <button id="melodyLock">LOCK</button>
+      </div>
+
+      <div class="point-controls">
+        <button id="repeat0" class="point-button">0</button>
+        <button id="repeat1" class="point-button">1</button>
+        <button id="repeat2" class="point-button">2</button>
+        <button id="repeat3" class="point-button">3</button>
+      </div>
+
+      <div class="fm-block">
+        <button id="autoFm" class="side-button">AUTO FM</button>
+
+        <div class="fm-controls">
+          <label>
+            FM RATIO
+            <input id="ratio" type="range" min="0.5" max="12" step="0.01" />
+          </label>
+          <label>
+            MOD AMOUNT
+            <input id="modAmount" type="range" min="20" max="1600" step="10" />
+          </label>
+          <label>
+            DECAY
+            <input id="decay" type="range" min="0.01" max="1.2" step="0.01" value="0.605" />
+          </label>
+          <label>
+            LONG NOTE
+            <input id="longChance" type="range" min="0" max="1" step="0.01" />
+          </label>
+        </div>
+      </div>
+
+      <div class="delay-block">
+        <button id="delayToggle" class="side-button">DELAY</button>
+
+        <div class="delay-time-wrap">
+          <select id="delayTime">
+            <option value="0.125">1/32</option>
+            <option value="0.25">1/16</option>
+            <option value="0.166">1/16T</option>
+            <option selected value="0.5">1/8</option>
+            <option value="0.333">1/8T</option>
+            <option value="0.75">1/8D</option>
+            <option value="1">1/4</option>
+            <option value="1.5">1/4D</option>
+          </select>
+        </div>
+
+        <div class="delay-controls">
+          <label>
+            FB
+            <input id="delayFeedback" type="range" min="0" max="0.82" step="0.01" value="0" />
+          </label>
+          <input id="delayMix" type="hidden" value="1" />
+        </div>
+      </div>
+
+      <div class="info">
+        <div>
+          BPM:
+          <span id="bpmView">160</span>
+        </div>
+        <div>
+          STEP:
+          <span id="stepView">-</span>
+        </div>
+        <div>
+          BAR:
+          <span id="barView">1 / 8</span>
+        </div>
+      </div>
+
+      <div class="repeat-ui">
+        <div class="repeat-row">
+          <div></div>
+          <div id="repeatGrid" class="repeat-grid"></div>
+        </div>
+      </div>
+
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <script>
+      const steps = 16,
+        totalBars = 8,
+        collapseBars = 1;
+      let ctx,
+        timer,
+        playing = false,
+        step = -1,
+        barIndex = 0;
+      let repeatPointCount = 0,
+        repeatEvents = [],
+        currentRepeat = null,
+        currentRepeatCount = 0;
+      let autoFm = false,
+        delayOn = false,
+        melodyLock = false;
+      let autoFmBar = -1,
+        autoFmRaf = null,
+        autoFmStepCount = 0,
+        autoFmDestinationIndex = 0,
+        autoFmDestinationStartStep = 0,
+        autoFmMoveSteps = steps * 4,
+        autoFmHoldSteps = steps * 2,
+        autoFmLongNoteBucket = -1;
+      const autoFmManualReleaseMs = 1800;
+      const autoFmManualUntil = {
+        ratio: 0,
+        modAmount: 0,
+        decay: 0,
+        longChance: 0,
+      };
+      let masterGain = null,
+        dryGain = null,
+        delayNode = null,
+        delayFeedbackGain = null,
+        delayWetGain = null,
+        delayFilter = null;
+
+      let collapseMode = false;
+      let collapseObjects = [];
+      let collapseRaf = null;
+
+      const bpmSelect = document.getElementById('bpm');
+      const bpmView = document.getElementById('bpmView');
+      const stepView = document.getElementById('stepView');
+      const barView = document.getElementById('barView');
+
+      const ratioControl = document.getElementById('ratio');
+      const modAmountControl = document.getElementById('modAmount');
+      const decayControl = document.getElementById('decay');
+      const longChanceControl = document.getElementById('longChance');
+      const autoFmButton = document.getElementById('autoFm');
+      const melodyLockButton = document.getElementById('melodyLock');
+
+      const delayToggle = document.getElementById('delayToggle');
+      const delayTimeSelect = document.getElementById('delayTime');
+      const delayFeedbackControl = document.getElementById('delayFeedback');
+      const delayMixControl = document.getElementById('delayMix');
+
+      const repeatGrid = document.getElementById('repeatGrid');
+      const grid = document.getElementById('grid');
+
+      const scale = [110, 123.47, 146.83, 164.81, 196, 220, 246.94, 293.66, 329.63, 392, 440, 493.88, 587.33];
+
+      const tracks = [
+        { name: 'FM 1', hits: 5, shift: 1, gain: 0.22, long: false },
+        { name: 'FM 2', hits: 7, shift: 3, gain: 0.18, long: false },
+        { name: 'FM 3', hits: 2, shift: 1, gain: 0.2, long: true },
+        { name: 'BASS', hits: 3, shift: 2, gain: 0.34, long: true },
+        { name: 'CLICK', hits: 11, shift: 5, gain: 0.09, long: false },
+      ];
+
+      let patterns = [],
+        longNotes = [],
+        notePatterns = [];
+
+      function rand(min, max) {
+        return min + Math.random() * (max - min);
+      }
+      function choose(a) {
+        return a[Math.floor(Math.random() * a.length)];
+      }
+      function euclid(n, k) {
+        let p = [];
+        for (let i = 0; i < n; i++) p.push((i * k) % n < k ? 1 : 0);
+        return p;
+      }
+      function rotate(p, r) {
+        return p.map((_, i) => p[(i - r + p.length) % p.length]);
+      }
+
+      function getBpm() {
+        return bpmSelect.value === 'inf' ? 160 : Number(bpmSelect.value);
+      }
+
+      function getBarLimit() {
+        return bpmSelect.value === 'inf' ? collapseBars : totalBars;
+      }
+
+      function initControls() {
+        repeatPointCount = choose([0, 1, 2, 3]);
+
+        document.querySelectorAll('.point-button').forEach((b) => b.classList.remove('active'));
+        document.getElementById(`repeat${repeatPointCount}`).classList.add('active');
+
+        ratioControl.value = choose([0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8]);
+        modAmountControl.value = Math.round(rand(180, 900) / 10) * 10;
+        decayControl.value = 0.605;
+        longChanceControl.value = rand(0.08, 0.36).toFixed(2);
+
+        delayFeedbackControl.value = 0;
+        delayMixControl.value = 1;
+      }
+
+      function makeNotePatterns() {
+        notePatterns = tracks.map((t) => {
+          return Array.from({ length: steps }, () => {
+            return t.name === 'BASS' ? choose(scale.slice(0, 5)) / 2 : choose(scale);
+          });
+        });
+      }
+
+      function makePatterns() {
+        patterns = tracks.map((t) => rotate(euclid(steps, t.hits), Math.floor(rand(0, steps))));
+        makeNotePatterns();
+        makeLongNotes();
+        decideRepeatEvents();
+        render();
+      }
+
+      function makeLongNotes() {
+        longNotes = tracks.map((t, ti) =>
+          Array.from({ length: steps }, (_, i) => {
+            if (!t.long || !patterns[ti][i]) return 0;
+            return Math.random() < Number(longChanceControl.value) ? choose([4, 6, 8, 12]) : 0;
+          }),
+        );
+      }
+
+      function findFreeSegments(occupied) {
+        const segments = [];
+        let start = null;
+
+        for (let i = 0; i < steps; i++) {
+          if (!occupied[i] && start === null) start = i;
+
+          if ((occupied[i] || i === steps - 1) && start !== null) {
+            const end = occupied[i] ? i - 1 : i;
+            segments.push({ start, end, length: end - start + 1 });
+            start = null;
+          }
+        }
+
+        return segments;
+      }
+
+      function decideRepeatEvents() {
+        repeatEvents = [];
+        currentRepeat = null;
+        currentRepeatCount = 0;
+
+        const occupied = Array(steps).fill(false);
+
+        for (let n = 0; n < repeatPointCount; n++) {
+          const remainingSlots = steps - occupied.filter(Boolean).length;
+          const remainingEvents = repeatPointCount - n;
+
+          if (remainingSlots < remainingEvents * 2) break;
+
+          const freeSegments = findFreeSegments(occupied).filter((s) => s.length >= 2);
+          if (!freeSegments.length) break;
+
+          const seg = choose(freeSegments);
+          const maxLen = Math.min(8, seg.length - (remainingEvents - 1) * 2);
+          const possibleLengths = [2, 3, 4, 6, 7, 8].filter((l) => l <= maxLen);
+          const length = choose(possibleLengths.length ? possibleLengths : [2]);
+
+          const possibleStarts = [];
+
+          for (let i = seg.start; i <= seg.end - length + 1; i++) {
+            let ok = true;
+            for (let j = 0; j < length; j++) if (occupied[i + j]) ok = false;
+            if (ok) possibleStarts.push(i);
+          }
+
+          const startStep = choose(possibleStarts);
+
+          for (let j = 0; j < length; j++) occupied[startStep + j] = true;
+
+          let repeats;
+          if (length === 2) repeats = choose([5, 6, 7, 8, 9]);
+          else if (length === 3) repeats = choose([4, 5, 6, 7]);
+          else if (length === 4) repeats = choose([3, 4, 5, 6]);
+          else if (length === 8) repeats = choose([2, 3, 4]);
+          else repeats = choose([2, 3]);
+
+          repeatEvents.push({ startStep, length, repeats, color: n + 1 });
+        }
+
+        while (repeatEvents.length < repeatPointCount) {
+          const used = repeatEvents.map((e) => e.startStep);
+          const candidates = [];
+          for (let i = 0; i < steps - 1; i++) if (!used.includes(i)) candidates.push(i);
+          if (!candidates.length) break;
+
+          repeatEvents.push({
+            startStep: choose(candidates),
+            length: 2,
+            repeats: choose([4, 5, 6, 7]),
+            color: repeatEvents.length + 1,
+          });
+        }
+
+        repeatEvents.sort((a, b) => a.startStep - b.startStep);
+      }
+
+      function isStrongStep(i) {
+        return [0, 4, 8, 12].includes(i);
+      }
+
+      function renderRepeatGrid() {
+        repeatGrid.innerHTML = '';
+
+        for (let i = 0; i < steps; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'repeat-cell';
+
+          if (playing && i === step) cell.classList.add('now');
+
+          repeatEvents.forEach((ev) => {
+            if (i >= ev.startStep && i < ev.startStep + ev.length) cell.classList.add(`point${ev.color}`);
+          });
+
+          repeatGrid.appendChild(cell);
+        }
+      }
+
+      function toggleStep(ti, i) {
+        if (collapseMode) return;
+
+        patterns[ti][i] = patterns[ti][i] ? 0 : 1;
+
+        if (!patterns[ti][i]) {
+          longNotes[ti][i] = 0;
+        } else if (tracks[ti].long && Math.random() < Number(longChanceControl.value)) {
+          longNotes[ti][i] = choose([4, 6, 8, 12]);
+        }
+
+        render();
+      }
+
+      function render() {
+        grid.innerHTML = '';
+
+        tracks.forEach((t, ti) => {
+          const row = document.createElement('div');
+          row.className = 'track';
+
+          const label = document.createElement('div');
+          label.textContent = t.name;
+          row.appendChild(label);
+
+          for (let i = 0; i < steps; i++) {
+            const s = document.createElement('div');
+            s.className = 'step';
+            s.dataset.track = t.name;
+
+            s.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              toggleStep(ti, i);
+            });
+
+            if (patterns[ti][i]) s.classList.add('on');
+            if (longNotes[ti][i]) s.classList.add('long');
+            if (playing && i === step) s.classList.add('play');
+
+            repeatEvents.forEach((ev) => {
+              if (i >= ev.startStep && i < ev.startStep + ev.length) s.classList.add('repeat');
+            });
+
+            row.appendChild(s);
+          }
+
+          grid.appendChild(row);
+        });
+
+        renderRepeatGrid();
+        bpmView.textContent = bpmSelect.value === 'inf' ? '∞' : bpmSelect.value;
+        stepView.textContent = playing ? String(step + 1).padStart(2, '0') : '--';
+        barView.textContent = `${barIndex + 1} / ${getBarLimit()}`;
+      }
+
+      function setupAudioGraph() {
+        if (masterGain) return;
+
+        masterGain = ctx.createGain();
+        dryGain = ctx.createGain();
+        delayNode = ctx.createDelay(2.5);
+        delayFeedbackGain = ctx.createGain();
+        delayWetGain = ctx.createGain();
+        delayFilter = ctx.createBiquadFilter();
+
+        masterGain.gain.value = 0.9;
+        dryGain.gain.value = 1;
+        delayFilter.type = 'lowpass';
+        delayFilter.frequency.value = 5200;
+
+        masterGain.connect(dryGain);
+        dryGain.connect(ctx.destination);
+        masterGain.connect(delayNode);
+        delayNode.connect(delayFilter);
+        delayFilter.connect(delayWetGain);
+        delayWetGain.connect(ctx.destination);
+        delayFilter.connect(delayFeedbackGain);
+        delayFeedbackGain.connect(delayNode);
+
+        updateDelay();
+      }
+
+      function updateDelay() {
+        if (!delayNode) return;
+
+        const division = Number(delayTimeSelect.value);
+        const bpm = getBpm();
+        const now = ctx.currentTime;
+        const delaySeconds = Math.max(0.001, (60 / bpm) * division);
+
+        delayNode.delayTime.cancelScheduledValues(now);
+        delayNode.delayTime.setTargetAtTime(delaySeconds, now, 0.03);
+
+        delayWetGain.gain.setTargetAtTime(delayOn ? Number(delayMixControl.value) : 0, now, 0.03);
+        delayFeedbackGain.gain.setTargetAtTime(delayOn ? Number(delayFeedbackControl.value) : 0, now, 0.03);
+      }
+
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v));
+      }
+
+      function lerp(a, b, amount) {
+        return a + (b - a) * amount;
+      }
+
+      function smoothstep(edge0, edge1, x) {
+        const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+        return t * t * (3 - 2 * t);
+      }
+
+      function setControlValue(control, value, digits = 2) {
+        control.value = Number(value).toFixed(digits);
+      }
+
+      function markAutoFmManual(name) {
+        if (!autoFm) return;
+        autoFmManualUntil[name] = performance.now() + autoFmManualReleaseMs;
+      }
+
+      function isAutoFmManual(name, now) {
+        return now < autoFmManualUntil[name];
+      }
+
+      const autoFmDestinations = [
+        { ratio: 50, modAmount: 0, decay: 100, longChance: 50, holdBars: 1 },
+        { ratio: 100, modAmount: 100, decay: 100, longChance: 50, holdBars: 1 },
+        { ratio: 0, modAmount: 0, decay: 100, longChance: 50, holdBars: 1 },
+        { ratio: 100, modAmount: 100, decay: 50, longChance: 75, holdBars: 1 },
+        { ratio: 0, modAmount: 0, decay: 50, longChance: 50, holdBars: 1 },
+        { ratio: 100, modAmount: 100, decay: 80, longChance: 80, holdBars: 2 },
+        { ratio: 0, modAmount: 0, decay: 70, longChance: 30, holdBars: 1 },
+        { ratio: 100, modAmount: 100, decay: 0, longChance: 100, holdBars: 2 },
+        { ratio: 20, modAmount: 50, decay: 20, longChance: 75, holdBars: 1 },
+        { ratio: 100, modAmount: 100, decay: 50, longChance: 0, holdBars: 1 },
+        { ratio: 75, modAmount: 100, decay: 100, longChance: 75, holdBars: 1 },
+        { ratio: 0, modAmount: 50, decay: 50, longChance: 25, holdBars: 1 },
+        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdBars: 2 },
+      ];
+
+      function percentToControl(name, value) {
+        const v = clamp(value, 0, 100) / 100;
+        if (name === 'ratio') return lerp(0.5, 12, v);
+        if (name === 'modAmount') return lerp(20, 1600, v);
+        if (name === 'decay') return lerp(0.01, 1.2, v);
+        return v;
+      }
+
+      function getDestination(index) {
+        return autoFmDestinations[(index + autoFmDestinations.length) % autoFmDestinations.length];
+      }
+
+      function barsToSteps(bars) {
+        return Math.max(1, Math.round(steps * bars));
+      }
+
+      function getDestinationDistance(from, to) {
+        return Math.max(
+          Math.abs(to.ratio - from.ratio),
+          Math.abs(to.modAmount - from.modAmount),
+          Math.abs(to.decay - from.decay),
+          Math.abs(to.longChance - from.longChance),
+        );
+      }
+
+      function getMoveStepCount(from, to) {
+        if (to.moveBars !== undefined) return barsToSteps(to.moveBars);
+
+        const distance = getDestinationDistance(from, to);
+        if (distance >= 60) return 64;
+        if (distance >= 25) return 32;
+        return 16;
+      }
+
+      function resetAutoFmDestination() {
+        autoFmDestinationIndex = 0;
+        autoFmDestinationStartStep = autoFmStepCount;
+        autoFmMoveSteps = getMoveStepCount(getDestination(autoFmDestinations.length - 1), getDestination(0));
+        autoFmHoldSteps = barsToSteps(getDestination(0).holdBars);
+        autoFmLongNoteBucket = -1;
+        Object.keys(autoFmManualUntil).forEach((key) => {
+          autoFmManualUntil[key] = 0;
+        });
+      }
+
+      function advanceAutoFmDestination() {
+        autoFmDestinationIndex = (autoFmDestinationIndex + 1) % autoFmDestinations.length;
+        autoFmDestinationStartStep = autoFmStepCount;
+        autoFmMoveSteps = getMoveStepCount(getDestination(autoFmDestinationIndex - 1), getDestination(autoFmDestinationIndex));
+        autoFmHoldSteps = barsToSteps(getDestination(autoFmDestinationIndex).holdBars);
+      }
+
+      function stopAutoFmMotion() {
+        if (autoFmRaf) cancelAnimationFrame(autoFmRaf);
+        autoFmRaf = null;
+      }
+
+      function autoFmMove() {
+        if (!autoFm) return;
+
+        if (!autoFmRaf) autoFmDrift();
+
+        if (step === 0 && autoFmBar !== barIndex) {
+          autoFmBar = barIndex;
+          makeLongNotes();
+        }
+      }
+
+      function autoFmDrift() {
+        if (!autoFm || collapseMode) {
+          stopAutoFmMotion();
+          return;
+        }
+
+        const now = performance.now();
+        const elapsedSteps = autoFmStepCount - autoFmDestinationStartStep;
+
+        if (elapsedSteps >= autoFmMoveSteps + autoFmHoldSteps) {
+          advanceAutoFmDestination();
+          autoFmRaf = requestAnimationFrame(autoFmDrift);
+          return;
+        }
+
+        const from = getDestination(autoFmDestinationIndex - 1);
+        const to = getDestination(autoFmDestinationIndex);
+        const move = smoothstep(0, 1, clamp(elapsedSteps / autoFmMoveSteps, 0, 1));
+        const targets = {
+          ratio: percentToControl('ratio', lerp(from.ratio, to.ratio, move)),
+          modAmount: percentToControl('modAmount', lerp(from.modAmount, to.modAmount, move)),
+          decay: percentToControl('decay', lerp(from.decay, to.decay, move)),
+          longChance: percentToControl('longChance', lerp(from.longChance, to.longChance, move)),
+        };
+        if (!isAutoFmManual('ratio', now)) {
+          const ratio = lerp(Number(ratioControl.value), targets.ratio, 0.04);
+          setControlValue(ratioControl, ratio, 2);
+        }
+
+        if (!isAutoFmManual('modAmount', now)) {
+          const modAmount = lerp(Number(modAmountControl.value), targets.modAmount, 0.04);
+          setControlValue(modAmountControl, modAmount, 0);
+        }
+
+        if (!isAutoFmManual('decay', now)) {
+          const decay = lerp(Number(decayControl.value), targets.decay, 0.035);
+          setControlValue(decayControl, decay, 2);
+        }
+
+        if (!isAutoFmManual('longChance', now)) {
+          const longChance = lerp(Number(longChanceControl.value), targets.longChance, 0.025);
+          const longNoteBucket = Math.round(longChance * 10);
+          setControlValue(longChanceControl, longChance, 2);
+
+          if (longNoteBucket !== autoFmLongNoteBucket) {
+            autoFmLongNoteBucket = longNoteBucket;
+            makeLongNotes();
+          }
+        }
+
+        autoFmRaf = requestAnimationFrame(autoFmDrift);
+      }
+
+      function fm(freq, time, dur, gainValue, isLong = false) {
+        const ratio = Number(ratioControl.value);
+        const modAmount = Number(modAmountControl.value);
+
+        const carrier = ctx.createOscillator();
+        const mod = ctx.createOscillator();
+        const modGain = ctx.createGain();
+        const amp = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        carrier.type = 'sine';
+        mod.type = 'sine';
+        carrier.frequency.value = freq;
+        mod.frequency.value = freq * ratio;
+
+        modGain.gain.setValueAtTime(modAmount, time);
+        modGain.gain.exponentialRampToValueAtTime(1, time + dur);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(isLong ? rand(300, 1200) : rand(800, 9000), time);
+
+        amp.gain.setValueAtTime(0.0001, time);
+        amp.gain.exponentialRampToValueAtTime(gainValue, time + 0.01);
+        amp.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+
+        mod.connect(modGain);
+        modGain.connect(carrier.frequency);
+        carrier.connect(filter);
+        filter.connect(amp);
+        amp.connect(masterGain);
+
+        mod.start(time);
+        carrier.start(time);
+        mod.stop(time + dur);
+        carrier.stop(time + dur);
+      }
+
+      function noise(time, dur, gainValue) {
+        const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < data.length; i++) {
+          const t = i / data.length;
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 2.2);
+        }
+
+        const src = ctx.createBufferSource();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+
+        src.buffer = buffer;
+
+        const clickFreq = choose([1600, 2200, 3200, 4500, 7000]);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(clickFreq, time);
+        filter.Q.setValueAtTime(8, time);
+
+        gain.gain.setValueAtTime(gainValue, time);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(choose([1200, 1800, 2400]), time);
+        osc.frequency.exponentialRampToValueAtTime(choose([300, 500, 700]), time + 0.018);
+
+        oscGain.gain.setValueAtTime(gainValue * 0.35, time);
+        oscGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.018);
+
+        osc.connect(oscGain);
+        oscGain.connect(masterGain);
+
+        src.start(time);
+        src.stop(time + dur);
+
+        osc.start(time);
+        osc.stop(time + 0.018);
+      }
+
+      function getFreq(t, ti) {
+        if (melodyLock) {
+          return notePatterns[ti][step];
+        }
+
+        return t.name === 'BASS' ? choose(scale.slice(0, 5)) / 2 : choose(scale);
+      }
+
+      function playStep() {
+        const stepDur = 60 / getBpm() / 4;
+
+        tracks.forEach((t, ti) => {
+          if (!patterns[ti][step]) return;
+
+          const now = ctx.currentTime;
+          const longLen = longNotes[ti][step];
+
+          if (t.name === 'CLICK') {
+            noise(now, 0.02, t.gain);
+            return;
+          }
+          if (longLen) {
+            const dur = stepDur * longLen;
+            fm(getFreq(t, ti), now, dur, t.gain, true);
+            return;
+          }
+
+          const dur = rand(0.03, Number(decayControl.value));
+          fm(getFreq(t, ti), now, dur, t.gain);
+        });
+      }
+
+      function handleRepeats() {
+        if (currentRepeat) {
+          if (step === currentRepeat.startStep + currentRepeat.length) {
+            currentRepeatCount++;
+
+            if (currentRepeatCount < currentRepeat.repeats) {
+              step = currentRepeat.startStep;
+              return;
+            } else {
+              currentRepeat = null;
+            }
+          }
+        } else {
+          repeatEvents.forEach((ev) => {
+            if (step === ev.startStep + ev.length) {
+              currentRepeat = ev;
+              currentRepeatCount = 1;
+              step = ev.startStep;
+            }
+          });
+        }
+      }
+
+      function tick() {
+        if (collapseMode) return;
+        if (step < 0) step = 0;
+
+        updateDelay();
+        autoFmMove();
+        playStep();
+        render();
+        if (autoFm) autoFmStepCount++;
+
+        step++;
+        handleRepeats();
+
+        if (step >= steps) {
+          step = 0;
+          barIndex++;
+
+          if (bpmSelect.value === 'inf' && barIndex >= collapseBars) {
+            startCollapse();
+            return;
+          }
+
+          if (bpmSelect.value !== 'inf' && barIndex >= totalBars) {
+            barIndex = 0;
+            if (!melodyLock) makePatterns();
+          }
+        }
+
+        timer = setTimeout(tick, (60 / getBpm() / 4) * 1000);
+      }
+
+      function startCollapse() {
+        if (collapseMode) return;
+
+        document.querySelectorAll('.physics-piece').forEach((el) => el.remove());
+        collapseObjects = [];
+
+        collapseMode = true;
+        playing = false;
+        clearTimeout(timer);
+        stopAutoFmMotion();
+
+        document.getElementById('play').textContent = 'PLAY';
+        document.getElementById('play').classList.remove('playing');
+
+        const targets = [
+          ...document.querySelectorAll('.top-controls button'),
+          ...document.querySelectorAll('.top-controls select'),
+          ...document.querySelectorAll('.point-controls button'),
+          document.getElementById('autoFm'),
+          ...document.querySelectorAll('.fm-controls label'),
+          document.getElementById('delayToggle'),
+          document.querySelector('.delay-time-wrap'),
+          ...document.querySelectorAll('.delay-controls label'),
+          ...document.querySelectorAll('.repeat-cell'),
+          ...document.querySelectorAll('.step'),
+        ].filter(Boolean);
+
+        targets.forEach((el) => {
+          const track = el.dataset?.track || '';
+          if (track === 'CLICK') return;
+
+          const rect = el.getBoundingClientRect();
+          const clone = el.cloneNode(true);
+
+          clone.classList.add('physics-piece');
+
+          if (el.classList.contains('step')) {
+            clone.classList.add('step');
+            clone.dataset.track = el.dataset.track || 'FM';
+          }
+
+          clone.style.width = rect.width + 'px';
+          clone.style.height = rect.height + 'px';
+          clone.style.transform = `translate(${rect.left}px,${rect.top}px)`;
+
+          document.body.appendChild(clone);
+
+          collapseObjects.push({
+            el: clone,
+            x: rect.left,
+            y: rect.top,
+            w: rect.width,
+            h: rect.height,
+            vx: rand(-3, 3),
+            vy: rand(-6, -1),
+            cool: 0,
+            type: el.classList.contains('step') ? 'step' : 'ui',
+            track: el.dataset.track || '',
+            hitPower: 1,
+          });
+        });
+
+        document.querySelector('.wrap').classList.add('collapse-source');
+
+        collapseLoop();
+
+        setTimeout(() => {
+          document.body.addEventListener('pointerdown', restartMachine, { once: true });
+        }, 1000);
+      }
+
+      function restartMachine() {
+        cancelAnimationFrame(collapseRaf);
+
+        collapseObjects.forEach((o) => {
+          o.el.style.transition = 'opacity .8s ease, transform .8s ease';
+          o.el.style.opacity = '0';
+          o.el.style.transform += ' scale(.6)';
+        });
+
+        setTimeout(() => {
+          document.querySelectorAll('.physics-piece').forEach((el) => el.remove());
+          collapseObjects = [];
+
+          const wrap = document.querySelector('.wrap');
+
+          wrap.style.transition = 'none';
+          wrap.style.opacity = '0';
+          wrap.classList.remove('collapse-source');
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              wrap.style.transition = 'opacity 1.2s ease';
+              wrap.style.opacity = '1';
+              setTimeout(() => {
+                wrap.style.transition = '';
+                wrap.style.opacity = '';
+              }, 1300);
+            });
+          });
+
+          collapseMode = false;
+          step = -1;
+          barIndex = 0;
+          currentRepeat = null;
+          currentRepeatCount = 0;
+
+          bpmSelect.value = '160';
+          bpmView.textContent = '160';
+          autoFmBar = -1;
+          autoFmStepCount = 0;
+          resetAutoFmDestination();
+
+          makePatterns();
+          render();
+          updateDelay();
+        }, 800);
+      }
+
+      function collapseLoop() {
+        const gravity = 0.28;
+        const bounce = 1.12;
+        const friction = 0.999;
+        const floor = window.innerHeight - 4;
+        const wall = window.innerWidth - 4;
+
+        collapseObjects.forEach((o) => {
+          o.vy += gravity;
+          o.vx *= friction;
+
+          o.x += o.vx;
+          o.y += o.vy;
+
+          let hit = false;
+
+          if (o.x < 0) {
+            o.x = 0;
+            o.vx = Math.abs(o.vx) * bounce;
+            hit = true;
+          }
+
+          if (o.x + o.w > wall) {
+            o.x = wall - o.w;
+            o.vx = -Math.abs(o.vx) * bounce;
+            hit = true;
+          }
+
+          if (o.y + o.h > floor) {
+            if (o.type === 'step') {
+              o.y = floor - o.h;
+              o.hitPower = Math.min(o.hitPower * 1.08, 3);
+
+              o.vy = -Math.abs(o.vy) * bounce * o.hitPower;
+              o.vx *= 0.99;
+
+              o.vx += rand(-2, 2) * o.hitPower;
+              o.vy -= rand(0, 2) * o.hitPower;
+              o.vx *= 0.99;
+              o.vx += rand(-2, 2);
+              o.vy -= rand(0, 2);
+              hit = true;
+            } else {
+              if (o.y > window.innerHeight + 300) {
+                o.el.remove();
+                o.dead = true;
+              }
+            }
+          }
+
+          collapseObjects = collapseObjects.filter((o) => !o.dead);
+
+          if (hit) collapseHitSound(o);
+          if (o.cool > 0) o.cool--;
+
+          o.el.style.transform = `translate(${o.x}px,${o.y}px)`;
+        });
+
+        for (let i = 0; i < collapseObjects.length; i++) {
+          for (let j = i + 1; j < collapseObjects.length; j++) {
+            const a = collapseObjects[i];
+            const b = collapseObjects[j];
+
+            if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) {
+              resolveCollision(a, b);
+            }
+          }
+        }
+
+        collapseRaf = requestAnimationFrame(collapseLoop);
+      }
+
+      function resolveCollision(a, b) {
+        const ax = a.x + a.w / 2;
+        const ay = a.y + a.h / 2;
+        const bx = b.x + b.w / 2;
+        const by = b.y + b.h / 2;
+
+        const dx = ax - bx;
+        const dy = ay - by;
+
+        const overlapX = (a.w + b.w) / 2 - Math.abs(dx);
+        const overlapY = (a.h + b.h) / 2 - Math.abs(dy);
+
+        if (overlapX <= 0 || overlapY <= 0) return;
+
+        if (overlapX < overlapY) {
+          const push = overlapX / 2;
+
+          if (dx > 0) {
+            a.x += push;
+            b.x -= push;
+          } else {
+            a.x -= push;
+            b.x += push;
+          }
+
+          const av = a.vx;
+          a.vx = b.vx * 0.8;
+          b.vx = av * 0.8;
+        } else {
+          const push = overlapY / 2;
+
+          if (dy > 0) {
+            a.y += push;
+            b.y -= push;
+          } else {
+            a.y -= push;
+            b.y += push;
+          }
+
+          const av = a.vy;
+          a.vy = b.vy * 0.8;
+          b.vy = av * 0.8;
+        }
+
+        collapseHitSound(a);
+        collapseHitSound(b);
+      }
+
+      function collapseHitSound(o) {
+        if (!ctx || !masterGain) return;
+        if (o.cool > 0) return;
+
+        const speed = Math.sqrt(o.vx * o.vx + o.vy * o.vy);
+        if (speed < 2.2) return;
+
+        o.cool = 10;
+
+        const now = ctx.currentTime;
+        const gain = Math.min(0.18, speed * 0.018);
+
+        if (o.track === 'CLICK') {
+          return;
+        }
+
+        if (o.type === 'step') {
+          const freq = o.track === 'BASS' ? choose(scale.slice(0, 5)) / 2 : choose(scale);
+
+          fm(freq, now, rand(0.04, 0.18), gain, o.track === 'FM 3' || o.track === 'BASS');
+        } else {
+          return;
+        }
+      }
+
+      document.getElementById('play').onclick = async () => {
+        if (collapseMode) return;
+
+        if (!ctx) {
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          setupAudioGraph();
+        }
+
+        await ctx.resume();
+
+        playing = !playing;
+
+        document.getElementById('play').classList.toggle('playing', playing);
+
+        if (playing) {
+          if (step < 0) step = 0;
+          document.getElementById('play').textContent = 'STOP';
+          tick();
+        } else {
+          document.getElementById('play').textContent = 'PLAY';
+          clearTimeout(timer);
+          stopAutoFmMotion();
+          render();
+        }
+      };
+
+      document.getElementById('random').onclick = () => {
+        if (collapseMode) return;
+
+        const btn = document.getElementById('random');
+
+        btn.classList.add('active');
+
+        setTimeout(() => {
+          btn.classList.remove('active');
+        }, 120);
+
+        tracks.forEach((t) => {
+          t.hits = Math.floor(rand(2, 12));
+          t.shift = Math.floor(rand(1, 8));
+        });
+
+        ratioControl.value = choose([0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8]);
+
+        modAmountControl.value = Math.round(rand(180, 1400) / 10) * 10;
+
+        decayControl.value = rand(0.04, 0.6).toFixed(2);
+
+        longChanceControl.value = rand(0.05, 0.5).toFixed(2);
+
+        makePatterns();
+      };
+
+      function setRepeatMode(n) {
+        if (collapseMode) return;
+
+        repeatPointCount = n;
+        currentRepeat = null;
+        currentRepeatCount = 0;
+
+        document.querySelectorAll('.point-button').forEach((b) => b.classList.remove('active'));
+        document.getElementById(`repeat${n}`).classList.add('active');
+
+        decideRepeatEvents();
+        render();
+      }
+
+      document.getElementById('repeat0').onclick = () => setRepeatMode(0);
+      document.getElementById('repeat1').onclick = () => setRepeatMode(1);
+      document.getElementById('repeat2').onclick = () => setRepeatMode(2);
+      document.getElementById('repeat3').onclick = () => setRepeatMode(3);
+
+      autoFmButton.onclick = () => {
+        if (collapseMode) return;
+        autoFm = !autoFm;
+        autoFmButton.classList.toggle('active', autoFm);
+        if (autoFm) {
+          resetAutoFmDestination();
+          if (playing) autoFmDrift();
+        } else {
+          stopAutoFmMotion();
+        }
+      };
+
+      melodyLockButton.onclick = () => {
+        if (collapseMode) return;
+        melodyLock = !melodyLock;
+        melodyLockButton.classList.toggle('active', melodyLock);
+      };
+
+      delayToggle.onclick = () => {
+        if (collapseMode) return;
+        delayOn = !delayOn;
+        delayToggle.classList.toggle('active', delayOn);
+        updateDelay();
+      };
+
+      [
+        [ratioControl, 'ratio'],
+        [modAmountControl, 'modAmount'],
+        [decayControl, 'decay'],
+        [longChanceControl, 'longChance'],
+      ].forEach(([control, name]) => {
+        control.addEventListener('pointerdown', () => markAutoFmManual(name));
+        control.addEventListener('input', () => markAutoFmManual(name));
+      });
+
+      longChanceControl.addEventListener('input', () => {
+        makeLongNotes();
+        render();
+      });
+
+      delayTimeSelect.addEventListener('change', updateDelay);
+      delayFeedbackControl.addEventListener('input', updateDelay);
+      bpmSelect.addEventListener('change', () => {
+        barIndex = 0;
+        render();
+        updateDelay();
+      });
+
+      initControls();
+      makePatterns();
+    </script>
+  </body>
 </html>
