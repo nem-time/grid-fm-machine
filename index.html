@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE</title>
+<title>GRID FM MACHINE COLLAPSE</title>
 
 <style>
 html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
@@ -877,7 +877,16 @@ const filter=ctx.createBiquadFilter();
 src.buffer=buffer;
 
 filter.type="bandpass";
-filter.frequency.setValueAtTime(3200,time);
+const clickFreq=choose([
+1200,
+1600,
+2200,
+3200,
+4500,
+7000
+]);
+
+filter.frequency.setValueAtTime(clickFreq,time);
 filter.Q.setValueAtTime(6,time);
 
 gain.gain.setValueAtTime(gainValue,time);
@@ -911,7 +920,15 @@ const now=ctx.currentTime;
 const longLen=longNotes[ti][step];
 
 if(t.name==="CLICK"){
-noise(now,.03,t.gain);
+
+const strong=[0,4,8,12].includes(step);
+
+noise(
+now,
+strong ? .05 : .02,
+strong ? t.gain*1.6 : t.gain
+);
+
 return;
 }
 
