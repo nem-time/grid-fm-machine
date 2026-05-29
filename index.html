@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE</title>
+<title>GRID FM MACHINE COLLAPSE</title>
 
 <style>
 html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
@@ -535,7 +535,7 @@ const tracks=[
 {name:"FM 2",hits:7,shift:3,gain:.18,long:false},
 {name:"FM 3",hits:2,shift:1,gain:.20,long:true},
 {name:"BASS",hits:3,shift:2,gain:.34,long:true},
-{name:"CLICK",hits:11,shift:5,gain:.12,long:false}
+{name:"CLICK",hits:11,shift:5,gain:.09,long:false}
 ];
 
 let patterns=[],longNotes=[],notePatterns=[];
@@ -933,8 +933,8 @@ const strong=[0,4,8,12].includes(step);
 
 noise(
 now,
-strong ? .055 : .022,
-strong ? t.gain*1.7 : t.gain
+strong ? .03 : .02,
+strong ? t.gain*1.25 : t.gain
 );
 
 return;
