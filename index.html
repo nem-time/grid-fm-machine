@@ -1095,6 +1095,10 @@ requestAnimationFrame(()=>{
 requestAnimationFrame(()=>{
 wrap.style.transition="opacity 1.2s ease";
 wrap.style.opacity="1";
+setTimeout(()=>{
+wrap.style.transition="";
+wrap.style.opacity="";
+},1300);
 });
 });
 
