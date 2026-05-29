@@ -391,14 +391,18 @@ margin-bottom:8px;
 margin:8px 0;
 }
 #bpm{
-appearance:none;
--webkit-appearance:none;
-text-align:center;
-text-align-last:center;
 padding-left:0;
 padding-right:0;
-
+text-align:center;
+text-align-last:center;
 }
+
+#bpm,
+#delayTime{
+-webkit-appearance:menulist;
+appearance:auto;
+}
+
 }
 </style>
 </head>
@@ -760,37 +764,17 @@ delayWetGain.gain.setTargetAtTime(delayOn?Number(delayMixControl.value):0,now,.0
 delayFeedbackGain.gain.setTargetAtTime(delayOn?Number(delayFeedbackControl.value):0,now,.03);
 }
 
+
 function autoFmMove(){
 if(!autoFm)return;
+if(step!==0)return;
 
-const repeatHere=isRepeatStep(step);
-const strong=isStrongStep(step);
-const barStart=step===0;
+ratioControl.value=choose([.5,1,1.5,2,2.5,3,4,5,6,8]);
+modAmountControl.value=choose([180,240,320,420,560,720,900]);
+decayControl.value=choose([.06,.08,.12,.16,.22,.3,.42,.6]);
+longChanceControl.value=choose([.08,.12,.18,.24,.32,.42]);
 
-let chance=.08;
-if(strong)chance=.32;
-if(repeatHere)chance=.48;
-if(barStart)chance=.58;
-if(Math.random()>chance)return;
-
-const ratioChoices=strong?[1,2,3,4]:repeatHere?[1.5,2,2.5,3,4,5,6,8]:[.5,1,1.5,2,3,4];
-ratioControl.value=choose(ratioChoices);
-
-if(repeatHere){
-modAmountControl.value=choose([500,650,800,1000,1200,1400]);
-decayControl.value=choose([.06,.08,.12,.16,.22,.3]);
-longChanceControl.value=choose([.12,.18,.24,.32,.42]);
-}else if(strong){
-modAmountControl.value=choose([180,240,320,420,560]);
-decayControl.value=choose([.12,.16,.22,.3,.42]);
-longChanceControl.value=choose([.08,.12,.18,.22]);
-}else{
-modAmountControl.value=choose([220,300,380,460,600,720]);
-decayControl.value=choose([.04,.06,.09,.12,.18]);
-longChanceControl.value=choose([.05,.08,.12,.16,.22]);
-}
-
-if(Math.random()<.35)makeLongNotes();
+makeLongNotes();
 }
 
 function fm(freq,time,dur,gainValue,isLong=false){
