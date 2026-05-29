@@ -999,8 +999,14 @@ makePatterns();
 timer=setTimeout(tick,(60/getBpm()/4)*1000);
 }
 
+
+
+
 function startCollapse(){
 if(collapseMode)return;
+
+document.querySelectorAll(".physics-piece").forEach(el=>el.remove());
+collapseObjects=[];
 
 collapseMode=true;
 playing=false;
@@ -1022,14 +1028,10 @@ document.querySelector(".delay-time-wrap"),
 ...document.querySelectorAll(".step")
 ].filter(Boolean);
 
-collapseObjects=[];
-
 targets.forEach(el=>{
-	const track=
-el.dataset?.track||"";
-if(track==="CLICK"){
-return;
-}
+const track=el.dataset?.track||"";
+if(track==="CLICK")return;
+
 const rect=el.getBoundingClientRect();
 const clone=el.cloneNode(true);
 
@@ -1066,36 +1068,23 @@ document.querySelector(".wrap").classList.add("collapse-source");
 collapseLoop();
 
 setTimeout(()=>{
-document.body.addEventListener(
-"pointerdown",
-restartMachine,
-{once:true}
-);
+document.body.addEventListener("pointerdown",restartMachine,{once:true});
 },1000);
 }
 
 function restartMachine(){
-
 cancelAnimationFrame(collapseRaf);
 
 collapseObjects.forEach(o=>{
-o.el.style.transition=
-"opacity .8s ease, transform .8s ease";
-
+o.el.style.transition="opacity .8s ease, transform .8s ease";
 o.el.style.opacity="0";
-o.el.style.transform+=
-" scale(.6)";
+o.el.style.transform+=" scale(.6)";
 });
 
 setTimeout(()=>{
-
-document
-.querySelectorAll(".physics-piece")
-.forEach(el=>el.remove());
-
+document.querySelectorAll(".physics-piece").forEach(el=>el.remove());
 collapseObjects=[];
 
-document
 const wrap=document.querySelector(".wrap");
 
 wrap.style.opacity="0";
@@ -1105,8 +1094,8 @@ requestAnimationFrame(()=>{
 wrap.style.transition="opacity 1.2s ease";
 wrap.style.opacity="1";
 });
-collapseMode=false;
 
+collapseMode=false;
 step=-1;
 barIndex=0;
 currentRepeat=null;
@@ -1114,7 +1103,6 @@ currentRepeatCount=0;
 
 bpmSelect.value="160";
 bpmView.textContent="160";
-
 autoFmBar=-1;
 
 makePatterns();
@@ -1122,7 +1110,6 @@ render();
 updateDelay();
 
 },800);
-
 }
 
 function collapseLoop(){
