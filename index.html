@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE COLLAPSE</title>
+<title>GRID FM MACHINE</title>
 
 <style>
 html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
@@ -867,7 +867,7 @@ const data=buffer.getChannelData(0);
 
 for(let i=0;i<data.length;i++){
 const t=i/data.length;
-data[i]=(Math.random()*2-1)*(1-t);
+data[i]=(Math.random()*2-1)*Math.pow(1-t,2.2);
 }
 
 const src=ctx.createBufferSource();
@@ -876,18 +876,11 @@ const filter=ctx.createBiquadFilter();
 
 src.buffer=buffer;
 
-filter.type="bandpass";
-const clickFreq=choose([
-1200,
-1600,
-2200,
-3200,
-4500,
-7000
-]);
+const clickFreq=choose([1600,2200,3200,4500,7000]);
 
+filter.type="bandpass";
 filter.frequency.setValueAtTime(clickFreq,time);
-filter.Q.setValueAtTime(6,time);
+filter.Q.setValueAtTime(8,time);
 
 gain.gain.setValueAtTime(gainValue,time);
 gain.gain.exponentialRampToValueAtTime(0.0001,time+dur);
@@ -896,8 +889,24 @@ src.connect(filter);
 filter.connect(gain);
 gain.connect(masterGain);
 
+const osc=ctx.createOscillator();
+const oscGain=ctx.createGain();
+
+osc.type="sine";
+osc.frequency.setValueAtTime(choose([1200,1800,2400]),time);
+osc.frequency.exponentialRampToValueAtTime(choose([300,500,700]),time+.018);
+
+oscGain.gain.setValueAtTime(gainValue*.35,time);
+oscGain.gain.exponentialRampToValueAtTime(0.0001,time+.018);
+
+osc.connect(oscGain);
+oscGain.connect(masterGain);
+
 src.start(time);
 src.stop(time+dur);
+
+osc.start(time);
+osc.stop(time+.018);
 }
 
 function getFreq(t,ti){
@@ -920,13 +929,12 @@ const now=ctx.currentTime;
 const longLen=longNotes[ti][step];
 
 if(t.name==="CLICK"){
-
 const strong=[0,4,8,12].includes(step);
 
 noise(
 now,
-strong ? .05 : .02,
-strong ? t.gain*1.6 : t.gain
+strong ? .055 : .022,
+strong ? t.gain*1.7 : t.gain
 );
 
 return;
