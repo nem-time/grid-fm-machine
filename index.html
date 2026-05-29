@@ -825,8 +825,10 @@ filter.connect(amp);
 amp.connect(masterGain);
 
 mod.start(time);
-carrier.start(timenomod.stop(time+dur);
-carrier.stop(time+dur);
+mod.start(time);
+carrier.start(time);
+mod.stop(time + dur);
+carrier.stop(time + dur);
 }
 
 function noise(time,dur,gainValue){
