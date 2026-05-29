@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE</title>
+<title>GRID FM MACHINE COLLAPSE</title>
 
 <style>
 html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
@@ -1114,8 +1114,14 @@ barIndex=0;
 currentRepeat=null;
 currentRepeatCount=0;
 
+bpmSelect.value="160";
+bpmView.textContent="160";
+
+autoFmBar=-1;
+
 makePatterns();
 render();
+updateDelay();
 
 },800);
 
