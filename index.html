@@ -1087,12 +1087,15 @@ collapseObjects=[];
 
 const wrap=document.querySelector(".wrap");
 
+wrap.style.transition="none";
 wrap.style.opacity="0";
 wrap.classList.remove("collapse-source");
 
 requestAnimationFrame(()=>{
+requestAnimationFrame(()=>{
 wrap.style.transition="opacity 1.2s ease";
 wrap.style.opacity="1";
+});
 });
 
 collapseMode=false;
