@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GRID FM MACHINE</title>
+<title>GRID FM MACHINE COLLAPSE</title>
 
 <style>
 html,body{margin:0;background:#050505;color:#eee;font-family:monospace}
-body{padding:24px}
+body{padding:24px;overflow-x:hidden}
 .wrap{max-width:1200px;margin:auto}
 h1{font-size:24px;margin:0 0 18px}
 
@@ -118,10 +118,7 @@ margin-bottom:24px;
 font-size:13px;
 }
 
-.grid{
-display:grid;
-gap:10px;
-}
+.grid{display:grid;gap:10px}
 
 .track{
 display:grid;
@@ -222,6 +219,32 @@ border:none;
 border-radius:50%;
 }
 
+.collapse-source{
+opacity:0;
+pointer-events:none;
+}
+
+.physics-piece{
+position:fixed;
+left:0;
+top:0;
+z-index:9999;
+margin:0 !important;
+box-sizing:border-box;
+pointer-events:none;
+will-change:transform;
+}
+
+/*.physics-piece.step{
+background:#0ff !important;
+border-color:#0ff !important;
+outline:none !important;
+}*/
+
+.physics-piece label{
+pointer-events:none;
+}
+
 @media (max-width:700px){
 body{padding:14px}
 h1{font-size:20px;margin:0 0 10px}
@@ -246,13 +269,9 @@ text-align:center;
 #bpm{
 text-align:center;
 text-align-last:center;
-padding-left:0;
-padding-right:0;
 }
 
-#melodyLock{
-font-size:11px;
-}
+#melodyLock{font-size:11px}
 
 .point-controls{
 display:grid;
@@ -283,7 +302,7 @@ min-width:0;
 height:36px;
 font-size:12px;
 padding:6px 0;
-margin:0;
+margin:10px 0 0 0;
 }
 
 .fm-controls{
@@ -303,7 +322,7 @@ display:grid;
 grid-template-columns:1fr 1fr 2fr;
 gap:8px;
 align-items:center;
-margin:0 0 10px;
+margin: 10px 10px 20px 10px;
 }
 
 #delayToggle{
@@ -316,9 +335,7 @@ padding:6px 0;
 margin:0;
 }
 
-.delay-time-wrap{
-grid-column:2;
-}
+.delay-time-wrap{grid-column:2}
 
 .delay-time-wrap select{
 width:100%;
@@ -349,31 +366,23 @@ font-size:11px;
 margin-bottom:10px;
 }
 
-.repeat-ui{
-margin:10px 0;
-}
+.repeat-ui{margin:10px 0}
 
 .repeat-row{
 grid-template-columns:52px 1fr;
 gap:4px;
 }
 
-.repeat-grid{
-gap:4px;
-}
+.repeat-grid{gap:4px}
 
-.repeat-cell{
-height:16px;
-}
+.repeat-cell{height:16px}
 
 .track{
 grid-template-columns:52px repeat(16,1fr);
 gap:4px;
 }
 
-.grid{
-gap:8px;
-}
+.grid{gap:8px}
 }
 
 @media (max-width:700px) and (orientation:landscape){
@@ -387,9 +396,6 @@ h1{font-size:18px;margin-bottom:8px}
 margin-bottom:8px;
 }
 
-.repeat-ui{
-margin:8px 0;
-}
 #bpm{
 padding-left:0;
 padding-right:0;
@@ -401,8 +407,11 @@ text-align-last:center;
 #delayTime{
 -webkit-appearance:menulist;
 appearance:auto;
+text-align:center;
+text-align-last:center;
 }
 
+.repeat-ui{margin:8px 0}
 }
 </style>
 </head>
@@ -424,7 +433,7 @@ appearance:auto;
 <option selected>160</option>
 <option>192</option>
 <option>240</option>
-<option>320</option>
+<option value="inf">∞</option>
 </select>
 
 <button id="melodyLock">MELODY</button>
@@ -470,7 +479,7 @@ appearance:auto;
 <div class="info">
 <div>BPM: <span id="bpmView">160</span></div>
 <div>STEP: <span id="stepView">-</span></div>
-<div>BAR: <span id="barView">1 / 16</span></div>
+<div>BAR: <span id="barView">1 / 8</span></div>
 </div>
 
 <div class="repeat-ui">
@@ -485,11 +494,16 @@ appearance:auto;
 </div>
 
 <script>
-const steps=16,totalBars=8;
+const steps=16,totalBars=8,collapseBars=1;
 let ctx,timer,playing=false,step=-1,barIndex=0;
 let repeatPointCount=0,repeatEvents=[],currentRepeat=null,currentRepeatCount=0;
 let autoFm=false,delayOn=false,melodyLock=false;
+let autoFmBar=-1;
 let masterGain=null,dryGain=null,delayNode=null,delayFeedbackGain=null,delayWetGain=null,delayFilter=null;
+
+let collapseMode=false;
+let collapseObjects=[];
+let collapseRaf=null;
 
 const bpmSelect=document.getElementById("bpm");
 const bpmView=document.getElementById("bpmView");
@@ -528,6 +542,14 @@ function choose(a){return a[Math.floor(Math.random()*a.length)]}
 function euclid(n,k){let p=[];for(let i=0;i<n;i++)p.push((i*k)%n<k?1:0);return p}
 function rotate(p,r){return p.map((_,i)=>p[(i-r+p.length)%p.length])}
 
+function getBpm(){
+return bpmSelect.value==="inf"?160:Number(bpmSelect.value);
+}
+
+function getBarLimit(){
+return bpmSelect.value==="inf"?collapseBars:totalBars;
+}
+
 function initControls(){
 repeatPointCount=choose([0,1,2,3]);
 
@@ -537,7 +559,7 @@ document.getElementById(`repeat${repeatPointCount}`).classList.add("active");
 ratioControl.value=choose([.5,1,1.5,2,2.5,3,4,5,6,8]);
 modAmountControl.value=Math.round(rand(180,900)/10)*10;
 decayControl.value=0.605;
-longChanceControl.value=0.5;
+longChanceControl.value=rand(.08,.36).toFixed(2);
 
 delayFeedbackControl.value=0;
 delayMixControl.value=1;
@@ -671,6 +693,8 @@ repeatGrid.appendChild(cell);
 }
 
 function toggleStep(ti,i){
+if(collapseMode)return;
+
 patterns[ti][i]=patterns[ti][i]?0:1;
 
 if(!patterns[ti][i]){
@@ -696,6 +720,7 @@ row.appendChild(label);
 for(let i=0;i<steps;i++){
 const s=document.createElement("div");
 s.className="step";
+s.dataset.track=t.name;
 
 s.addEventListener("pointerdown",e=>{
 e.preventDefault();
@@ -717,9 +742,9 @@ grid.appendChild(row);
 });
 
 renderRepeatGrid();
-bpmView.textContent=bpmSelect.value;
+bpmView.textContent=bpmSelect.value==="inf"?"∞":bpmSelect.value;
 stepView.textContent=playing?step:"-";
-barView.textContent=`${barIndex+1} / ${totalBars}`;
+barView.textContent=`${barIndex+1} / ${getBarLimit()}`;
 }
 
 function setupAudioGraph(){
@@ -753,7 +778,7 @@ function updateDelay(){
 if(!delayNode)return;
 
 const division=Number(delayTimeSelect.value);
-const bpm=Number(bpmSelect.value);
+const bpm=getBpm();
 const now=ctx.currentTime;
 const delaySeconds=Math.max(.001,(60/bpm)*division);
 
@@ -764,15 +789,31 @@ delayWetGain.gain.setTargetAtTime(delayOn?Number(delayMixControl.value):0,now,.0
 delayFeedbackGain.gain.setTargetAtTime(delayOn?Number(delayFeedbackControl.value):0,now,.03);
 }
 
-
 function autoFmMove(){
+
 if(!autoFm)return;
+
 if(step!==0)return;
 
-ratioControl.value=choose([.5,1,1.5,2,2.5,3,4,5,6,8]);
-modAmountControl.value=choose([180,240,320,420,560,720,900]);
-decayControl.value=choose([.06,.08,.12,.16,.22,.3,.42,.6]);
-longChanceControl.value=choose([.08,.12,.18,.24,.32,.42]);
+if(autoFmBar===barIndex)return;
+
+autoFmBar=barIndex;
+
+ratioControl.value=choose([
+.5,1,1.5,2,2.5,3,4,5,6,8
+]);
+
+modAmountControl.value=choose([
+180,240,320,420,560,720,900
+]);
+
+decayControl.value=choose([
+.06,.08,.12,.16,.22,.3,.42,.6
+]);
+
+longChanceControl.value=choose([
+.08,.12,.18,.24,.32,.42
+]);
 
 makeLongNotes();
 }
@@ -810,8 +851,8 @@ amp.connect(masterGain);
 
 mod.start(time);
 carrier.start(time);
-mod.stop(time + dur);
-carrier.stop(time + dur);
+mod.stop(time+dur);
+carrier.stop(time+dur);
 }
 
 function noise(time,dur,gainValue){
@@ -855,7 +896,7 @@ return t.name==="BASS"
 }
 
 function playStep(){
-const stepDur=60/Number(bpmSelect.value)/4;
+const stepDur=60/getBpm()/4;
 
 tracks.forEach((t,ti)=>{
 if(!patterns[ti][step])return;
@@ -903,6 +944,7 @@ step=ev.startStep;
 }
 
 function tick(){
+if(collapseMode)return;
 if(step<0)step=0;
 
 updateDelay();
@@ -917,16 +959,251 @@ if(step>=steps){
 step=0;
 barIndex++;
 
-if(barIndex>=totalBars){
+if(bpmSelect.value==="inf"&&barIndex>=collapseBars){
+startCollapse();
+return;
+}
+
+if(bpmSelect.value!=="inf"&&barIndex>=totalBars){
 barIndex=0;
 makePatterns();
 }
 }
 
-timer=setTimeout(tick,(60/Number(bpmSelect.value)/4)*1000);
+timer=setTimeout(tick,(60/getBpm()/4)*1000);
+}
+
+function startCollapse(){
+if(collapseMode)return;
+
+collapseMode=true;
+playing=false;
+clearTimeout(timer);
+
+document.getElementById("play").textContent="PLAY";
+document.getElementById("play").classList.remove("playing");
+
+const targets=[
+...document.querySelectorAll(".top-controls button"),
+...document.querySelectorAll(".top-controls select"),
+...document.querySelectorAll(".point-controls button"),
+document.getElementById("autoFm"),
+...document.querySelectorAll(".fm-controls label"),
+document.getElementById("delayToggle"),
+document.querySelector(".delay-time-wrap"),
+...document.querySelectorAll(".delay-controls label"),
+...document.querySelectorAll(".repeat-cell"),
+...document.querySelectorAll(".step")
+].filter(Boolean);
+
+collapseObjects=[];
+
+targets.forEach(el=>{
+	const track=
+el.dataset?.track||"";
+if(track==="CLICK"){
+return;
+}
+const rect=el.getBoundingClientRect();
+const clone=el.cloneNode(true);
+
+clone.classList.add("physics-piece");
+
+if(el.classList.contains("step")){
+clone.classList.add("step");
+clone.dataset.track=el.dataset.track||"FM";
+}
+
+if(el.classList.contains("repeat-cell")){
+clone.style.background="#0ff";
+clone.style.borderColor="#0ff";
+}
+
+clone.style.width=rect.width+"px";
+clone.style.height=rect.height+"px";
+clone.style.transform=`translate(${rect.left}px,${rect.top}px)`;
+
+document.body.appendChild(clone);
+
+collapseObjects.push({
+el:clone,
+x:rect.left,
+y:rect.top,
+w:rect.width,
+h:rect.height,
+vx:rand(-3,3),
+vy:rand(-6,-1),
+cool:0,
+type:el.classList.contains("step")?"step":"ui",
+track:el.dataset.track||"",
+hitPower:1
+});
+});
+
+document.querySelector(".wrap").classList.add("collapse-source");
+
+collapseLoop();
+}
+
+function collapseLoop(){
+const gravity=.28;
+const bounce=1.12;
+const friction=.999;
+const floor=window.innerHeight-4;
+const wall=window.innerWidth-4;
+
+collapseObjects.forEach(o=>{
+o.vy+=gravity;
+o.vx*=friction;
+
+o.x+=o.vx;
+o.y+=o.vy;
+
+let hit=false;
+
+if(o.x<0){
+o.x=0;
+o.vx=Math.abs(o.vx)*bounce;
+hit=true;
+}
+
+if(o.x+o.w>wall){
+o.x=wall-o.w;
+o.vx=-Math.abs(o.vx)*bounce;
+hit=true;
+}
+
+if(o.y+o.h>floor){
+
+if(o.type==="step"){
+o.y=floor-o.h;
+// o.vy=-Math.abs(o.vy)*bounce;
+o.hitPower=Math.min(o.hitPower*1.08,3);
+
+o.vy=-Math.abs(o.vy)*bounce*o.hitPower;
+o.vx*=.99;
+
+o.vx+=rand(-2,2)*o.hitPower;
+o.vy-=rand(0,2)*o.hitPower;
+o.vx*=.99;
+o.vx+=rand(-2,2);
+o.vy-=rand(0,2);
+hit=true;
+}else{
+/* UIパーツは床を抜けて落ちる */
+if(o.y>window.innerHeight+300){
+o.el.remove();
+o.dead=true;
+}
+}
+
+}
+
+collapseObjects=collapseObjects.filter(o=>!o.dead);
+
+if(hit)collapseHitSound(o);
+if(o.cool>0)o.cool--;
+
+o.el.style.transform=`translate(${o.x}px,${o.y}px)`;
+});
+
+for(let i=0;i<collapseObjects.length;i++){
+for(let j=i+1;j<collapseObjects.length;j++){
+const a=collapseObjects[i];
+const b=collapseObjects[j];
+
+if(
+a.x<b.x+b.w &&
+a.x+a.w>b.x &&
+a.y<b.y+b.h &&
+a.y+a.h>b.y
+){
+resolveCollision(a,b);
+}
+}
+}
+
+collapseRaf=requestAnimationFrame(collapseLoop);
+}
+
+function resolveCollision(a,b){
+const ax=a.x+a.w/2;
+const ay=a.y+a.h/2;
+const bx=b.x+b.w/2;
+const by=b.y+b.h/2;
+
+const dx=ax-bx;
+const dy=ay-by;
+
+const overlapX=(a.w+b.w)/2-Math.abs(dx);
+const overlapY=(a.h+b.h)/2-Math.abs(dy);
+
+if(overlapX<=0||overlapY<=0)return;
+
+if(overlapX<overlapY){
+const push=overlapX/2;
+
+if(dx>0){
+a.x+=push;
+b.x-=push;
+}else{
+a.x-=push;
+b.x+=push;
+}
+
+const av=a.vx;
+a.vx=b.vx*.8;
+b.vx=av*.8;
+}else{
+const push=overlapY/2;
+
+if(dy>0){
+a.y+=push;
+b.y-=push;
+}else{
+a.y-=push;
+b.y+=push;
+}
+
+const av=a.vy;
+a.vy=b.vy*.8;
+b.vy=av*.8;
+}
+
+collapseHitSound(a);
+collapseHitSound(b);
+}
+
+function collapseHitSound(o){
+if(!ctx||!masterGain)return;
+if(o.cool>0)return;
+
+const speed=Math.sqrt(o.vx*o.vx+o.vy*o.vy);
+if(speed<2.2)return;
+
+o.cool=10;
+
+const now=ctx.currentTime;
+const gain=Math.min(.18,speed*.018);
+
+if(o.track==="CLICK"){
+return;
+}
+
+if(o.type==="step"){
+const freq=o.track==="BASS"
+? choose(scale.slice(0,5))/2
+: choose(scale);
+
+fm(freq,now,rand(.04,.18),gain,o.track==="FM 3"||o.track==="BASS");
+}else{
+return;
+}
 }
 
 document.getElementById("play").onclick=async()=>{
+if(collapseMode)return;
+
 if(!ctx){
 ctx=new (window.AudioContext||window.webkitAudioContext)();
 setupAudioGraph();
@@ -950,6 +1227,8 @@ render();
 };
 
 document.getElementById("random").onclick=()=>{
+if(collapseMode)return;
+
 const btn=document.getElementById("random");
 
 btn.classList.add("active");
@@ -963,10 +1242,23 @@ t.hits=Math.floor(rand(2,12));
 t.shift=Math.floor(rand(1,8));
 });
 
+/* FMパラメータもランダム */
+ratioControl.value=choose([
+.5,1,1.5,2,2.5,3,4,5,6,8
+]);
+
+modAmountControl.value=Math.round(rand(180,1400)/10)*10;
+
+decayControl.value=rand(.04,.6).toFixed(2);
+
+longChanceControl.value=rand(.05,.5).toFixed(2);
+
 makePatterns();
 };
 
 function setRepeatMode(n){
+if(collapseMode)return;
+
 repeatPointCount=n;
 currentRepeat=null;
 currentRepeatCount=0;
@@ -984,16 +1276,19 @@ document.getElementById("repeat2").onclick=()=>setRepeatMode(2);
 document.getElementById("repeat3").onclick=()=>setRepeatMode(3);
 
 autoFmButton.onclick=()=>{
+if(collapseMode)return;
 autoFm=!autoFm;
 autoFmButton.classList.toggle("active",autoFm);
 };
 
 melodyLockButton.onclick=()=>{
+if(collapseMode)return;
 melodyLock=!melodyLock;
 melodyLockButton.classList.toggle("active",melodyLock);
 };
 
 delayToggle.onclick=()=>{
+if(collapseMode)return;
 delayOn=!delayOn;
 delayToggle.classList.toggle("active",delayOn);
 updateDelay();
@@ -1006,7 +1301,11 @@ render();
 
 delayTimeSelect.addEventListener("change",updateDelay);
 delayFeedbackControl.addEventListener("input",updateDelay);
-bpmSelect.addEventListener("change",updateDelay);
+bpmSelect.addEventListener("change",()=>{
+barIndex=0;
+render();
+updateDelay();
+});
 
 initControls();
 makePatterns();
