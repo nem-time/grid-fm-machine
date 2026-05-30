@@ -595,8 +595,10 @@
       let autoFmBar = -1,
         autoFmRaf = null,
         autoFmStepCount = 0,
+        autoFmMotionStepCount = 0,
         autoFmDestinationIndex = 0,
         autoFmDestinationStartStep = 0,
+        autoFmMotionStartStep = 0,
         autoFmFromDestination = null,
         autoFmToDestination = null,
         autoFmMoveSteps = steps * 4,
@@ -946,6 +948,10 @@
         control.value = Number(value).toFixed(digits);
       }
 
+      function approachValue(current, target, amount) {
+        return Math.abs(target - current) < 0.001 ? target : lerp(current, target, amount);
+      }
+
       function markAutoFmManual(name) {
         if (!autoFm) return;
         autoFmManualUntil[name] = performance.now() + autoFmManualReleaseMs;
@@ -1011,10 +1017,7 @@
           tries++;
         } while (previous && getDestinationDistance(previous, destination) < 20 && tries < 12);
 
-        const distance = previous ? getDestinationDistance(previous, destination) : 50;
-        if (distance >= 60) destination.moveSteps = choose([24, 32, 48]);
-        else if (distance >= 35) destination.moveSteps = choose([16, 24, 32]);
-        else destination.moveSteps = choose([8, 16, 24]);
+        destination.moveSteps = 16;
 
         const energy = Math.max(destination.modAmount, destination.decay, destination.longChance);
         if (energy >= 90 && Math.random() < 0.55) destination.holdSteps = choose([16, 24, 32, 48]);
@@ -1042,24 +1045,11 @@
         return 16;
       }
 
-      const autoFmSpeedPatterns = [
-        { ratio: 0.75, modAmount: 1, decay: 1.25, longChance: 1 },
-        { ratio: 1.25, modAmount: 0.75, decay: 1, longChance: 1.15 },
-        { ratio: 1, modAmount: 1.2, decay: 0.7, longChance: 1 },
-        { ratio: 0.9, modAmount: 1, decay: 1.35, longChance: 0.75 },
-      ];
-
       function getParamMoveStepCounts(from, to, baseSteps, destinationIndex) {
-        const pattern = autoFmSpeedPatterns[destinationIndex % autoFmSpeedPatterns.length];
         const counts = {};
 
         autoFmNames.forEach((name) => {
-          if (from[name] === to[name]) {
-            counts[name] = 1;
-            return;
-          }
-
-          counts[name] = Math.max(8, Math.round(baseSteps * pattern[name]));
+          counts[name] = from[name] === to[name] ? 1 : baseSteps;
         });
 
         return counts;
@@ -1079,6 +1069,7 @@
       function resetAutoFmDestination() {
         autoFmDestinationIndex = 0;
         autoFmDestinationStartStep = autoFmStepCount;
+        autoFmMotionStartStep = autoFmMotionStepCount;
         autoFmFromDestination = getCurrentAutoFmDestination();
         autoFmToDestination = makeAutoFmDestination(autoFmFromDestination);
         setAutoFmMoveSteps(autoFmFromDestination, autoFmToDestination, 0);
@@ -1092,6 +1083,7 @@
       function advanceAutoFmDestination() {
         autoFmDestinationIndex++;
         autoFmDestinationStartStep = autoFmStepCount;
+        autoFmMotionStartStep = autoFmMotionStepCount;
         autoFmFromDestination = autoFmToDestination || getCurrentAutoFmDestination();
         autoFmToDestination = makeAutoFmDestination(autoFmFromDestination);
         setAutoFmMoveSteps(autoFmFromDestination, autoFmToDestination, autoFmDestinationIndex);
@@ -1114,6 +1106,12 @@
         }
       }
 
+      function canAdvanceAutoFmDestination(elapsedSteps) {
+        if (elapsedSteps < autoFmMoveSteps + autoFmHoldSteps) return false;
+        if (getEffectiveBarStepCount() > steps * 2) return step === 0;
+        return !currentRepeat;
+      }
+
       function autoFmDrift() {
         if (!autoFm || collapseMode) {
           stopAutoFmMotion();
@@ -1122,13 +1120,9 @@
 
         const now = performance.now();
         const elapsedSteps = autoFmStepCount - autoFmDestinationStartStep;
+        const elapsedMotionSteps = autoFmMotionStepCount - autoFmMotionStartStep;
 
-        if (elapsedSteps >= autoFmMoveSteps + autoFmHoldSteps) {
-          if (currentRepeat) {
-            autoFmRaf = requestAnimationFrame(autoFmDrift);
-            return;
-          }
-
+        if (canAdvanceAutoFmDestination(elapsedSteps)) {
           advanceAutoFmDestination();
           autoFmRaf = requestAnimationFrame(autoFmDrift);
           return;
@@ -1139,10 +1133,10 @@
         const from = autoFmFromDestination;
         const to = autoFmToDestination;
         const moves = {
-          ratio: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.ratio, 0, 1)),
-          modAmount: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.modAmount, 0, 1)),
-          decay: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.decay, 0, 1)),
-          longChance: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.longChance, 0, 1)),
+          ratio: smoothstep(0, 1, clamp(elapsedMotionSteps / autoFmParamMoveSteps.ratio, 0, 1)),
+          modAmount: smoothstep(0, 1, clamp(elapsedMotionSteps / autoFmParamMoveSteps.modAmount, 0, 1)),
+          decay: smoothstep(0, 1, clamp(elapsedMotionSteps / autoFmParamMoveSteps.decay, 0, 1)),
+          longChance: smoothstep(0, 1, clamp(elapsedMotionSteps / autoFmParamMoveSteps.longChance, 0, 1)),
         };
         const targets = {
           ratio: percentToControl('ratio', lerp(from.ratio, to.ratio, moves.ratio)),
@@ -1152,20 +1146,21 @@
         };
 
         if (!isAutoFmManual('ratio', now)) {
-          setControlValue(ratioControl, targets.ratio, 2);
+          setControlValue(ratioControl, approachValue(Number(ratioControl.value), targets.ratio, 0.12), 2);
         }
 
         if (!isAutoFmManual('modAmount', now)) {
-          setControlValue(modAmountControl, targets.modAmount, 0);
+          setControlValue(modAmountControl, approachValue(Number(modAmountControl.value), targets.modAmount, 0.1), 0);
         }
 
         if (!isAutoFmManual('decay', now)) {
-          setControlValue(decayControl, targets.decay, 2);
+          setControlValue(decayControl, approachValue(Number(decayControl.value), targets.decay, 0.08), 2);
         }
 
         if (!isAutoFmManual('longChance', now)) {
           const longNoteBucket = Math.round(targets.longChance * 20);
-          setControlValue(longChanceControl, targets.longChance, 2);
+          const longChance = approachValue(Number(longChanceControl.value), targets.longChance, 0.08);
+          setControlValue(longChanceControl, longChance, 2);
 
           if (longNoteBucket !== autoFmLongNoteBucket) {
             autoFmLongNoteBucket = longNoteBucket;
@@ -1324,7 +1319,10 @@
         autoFmMove();
         playStep();
         render();
-        if (autoFm) autoFmStepCount += getAutoFmStepIncrement();
+        if (autoFm) {
+          autoFmStepCount++;
+          autoFmMotionStepCount++;
+        }
 
         step++;
         handleRepeats();
@@ -1458,6 +1456,7 @@
           bpmView.textContent = '160';
           autoFmBar = -1;
           autoFmStepCount = 0;
+          autoFmMotionStepCount = 0;
           resetAutoFmDestination();
 
           makePatterns();
