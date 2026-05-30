@@ -597,6 +597,8 @@
         autoFmStepCount = 0,
         autoFmDestinationIndex = 0,
         autoFmDestinationStartStep = 0,
+        autoFmFromDestination = null,
+        autoFmToDestination = null,
         autoFmMoveSteps = steps * 4,
         autoFmParamMoveSteps = {
           ratio: steps * 4,
@@ -953,29 +955,7 @@
         return now < autoFmManualUntil[name];
       }
 
-      const autoFmDestinations = [
-        { ratio: 50, modAmount: 100, decay: 50, longChance: 50, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 75, modAmount: 100, decay: 50, longChance: 75, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 25, modAmount: 100, decay: 50, longChance: 75, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 50, modAmount: 50, decay: 100, longChance: 75, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 0, modAmount: 100, decay: 100, longChance: 75, holdChoices: [24, 32], moveSteps: 32 },
-        { ratio: 50, modAmount: 100, decay: 100, longChance: 100, holdChoices: [8, 16, 24], moveSteps: 24 },
-        { ratio: 100, modAmount: 50, decay: 100, longChance: 100, holdChoices: [8, 16], moveSteps: 32 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 75, modAmount: 100, decay: 0, longChance: 100, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 25, modAmount: 100, decay: 0, longChance: 75, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 50, modAmount: 75, decay: 50, longChance: 75, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 100, modAmount: 100, decay: 100, longChance: 50, holdChoices: [8, 16, 24], moveSteps: 32 },
-        { ratio: 50, modAmount: 50, decay: 100, longChance: 50, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 0, modAmount: 50, decay: 0, longChance: 100, holdChoices: [8, 16], moveSteps: 32 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 50, modAmount: 100, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 100, modAmount: 50, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 32 },
-        { ratio: 50, modAmount: 50, decay: 100, longChance: 100, holdChoices: [8, 16], moveSteps: 24 },
-        { ratio: 25, modAmount: 75, decay: 100, longChance: 75, holdChoices: [8, 16, 24], moveSteps: 24 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdChoices: [16, 24], moveSteps: 32 },
-      ];
+      const autoFmNames = ['ratio', 'modAmount', 'decay', 'longChance'];
 
       function percentToControl(name, value) {
         const v = clamp(value, 0, 100) / 100;
@@ -985,8 +965,21 @@
         return v;
       }
 
-      function getDestination(index) {
-        return autoFmDestinations[(index + autoFmDestinations.length) % autoFmDestinations.length];
+      function controlToPercent(name, value) {
+        const v = Number(value);
+        if (name === 'ratio') return clamp(((v - 0.5) / 11.5) * 100, 0, 100);
+        if (name === 'modAmount') return clamp(((v - 20) / 1580) * 100, 0, 100);
+        if (name === 'decay') return clamp(((v - 0.01) / 1.19) * 100, 0, 100);
+        return clamp(v * 100, 0, 100);
+      }
+
+      function getCurrentAutoFmDestination() {
+        return {
+          ratio: controlToPercent('ratio', ratioControl.value),
+          modAmount: controlToPercent('modAmount', modAmountControl.value),
+          decay: controlToPercent('decay', decayControl.value),
+          longChance: controlToPercent('longChance', longChanceControl.value),
+        };
       }
 
       function barsToSteps(bars) {
@@ -998,6 +991,36 @@
         if (destination.holdSteps !== undefined) return destination.holdSteps;
         if (destination.holdBars !== undefined) return barsToSteps(destination.holdBars);
         return steps;
+      }
+
+      function randomAutoFmPercent(previous, name) {
+        if (previous && Math.random() < 0.28) return previous[name];
+        if (Math.random() < 0.55) return choose([0, 25, 50, 75, 100]);
+        return Math.round(rand(0, 100) / 5) * 5;
+      }
+
+      function makeAutoFmDestination(previous) {
+        let destination;
+        let tries = 0;
+
+        do {
+          destination = {};
+          autoFmNames.forEach((name) => {
+            destination[name] = randomAutoFmPercent(previous, name);
+          });
+          tries++;
+        } while (previous && getDestinationDistance(previous, destination) < 20 && tries < 12);
+
+        const distance = previous ? getDestinationDistance(previous, destination) : 50;
+        if (distance >= 60) destination.moveSteps = choose([24, 32, 48]);
+        else if (distance >= 35) destination.moveSteps = choose([16, 24, 32]);
+        else destination.moveSteps = choose([8, 16, 24]);
+
+        const energy = Math.max(destination.modAmount, destination.decay, destination.longChance);
+        if (energy >= 90 && Math.random() < 0.55) destination.holdSteps = choose([16, 24, 32, 48]);
+        else destination.holdSteps = choose([0, 8, 16, 24]);
+
+        return destination;
       }
 
       function getDestinationDistance(from, to) {
@@ -1030,7 +1053,7 @@
         const pattern = autoFmSpeedPatterns[destinationIndex % autoFmSpeedPatterns.length];
         const counts = {};
 
-        ['ratio', 'modAmount', 'decay', 'longChance'].forEach((name) => {
+        autoFmNames.forEach((name) => {
           if (from[name] === to[name]) {
             counts[name] = 1;
             return;
@@ -1056,8 +1079,10 @@
       function resetAutoFmDestination() {
         autoFmDestinationIndex = 0;
         autoFmDestinationStartStep = autoFmStepCount;
-        setAutoFmMoveSteps(getDestination(autoFmDestinations.length - 1), getDestination(0), 0);
-        autoFmHoldSteps = getHoldStepCount(getDestination(0));
+        autoFmFromDestination = getCurrentAutoFmDestination();
+        autoFmToDestination = makeAutoFmDestination(autoFmFromDestination);
+        setAutoFmMoveSteps(autoFmFromDestination, autoFmToDestination, 0);
+        autoFmHoldSteps = getHoldStepCount(autoFmToDestination);
         autoFmLongNoteBucket = -1;
         Object.keys(autoFmManualUntil).forEach((key) => {
           autoFmManualUntil[key] = 0;
@@ -1065,14 +1090,12 @@
       }
 
       function advanceAutoFmDestination() {
-        autoFmDestinationIndex = (autoFmDestinationIndex + 1) % autoFmDestinations.length;
+        autoFmDestinationIndex++;
         autoFmDestinationStartStep = autoFmStepCount;
-        setAutoFmMoveSteps(
-          getDestination(autoFmDestinationIndex - 1),
-          getDestination(autoFmDestinationIndex),
-          autoFmDestinationIndex,
-        );
-        autoFmHoldSteps = getHoldStepCount(getDestination(autoFmDestinationIndex));
+        autoFmFromDestination = autoFmToDestination || getCurrentAutoFmDestination();
+        autoFmToDestination = makeAutoFmDestination(autoFmFromDestination);
+        setAutoFmMoveSteps(autoFmFromDestination, autoFmToDestination, autoFmDestinationIndex);
+        autoFmHoldSteps = getHoldStepCount(autoFmToDestination);
       }
 
       function stopAutoFmMotion() {
@@ -1111,8 +1134,10 @@
           return;
         }
 
-        const from = getDestination(autoFmDestinationIndex - 1);
-        const to = getDestination(autoFmDestinationIndex);
+        if (!autoFmFromDestination || !autoFmToDestination) resetAutoFmDestination();
+
+        const from = autoFmFromDestination;
+        const to = autoFmToDestination;
         const moves = {
           ratio: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.ratio, 0, 1)),
           modAmount: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.modAmount, 0, 1)),
