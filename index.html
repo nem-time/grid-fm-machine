@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GRID FM MACHINE COLLAPSE</title>
+    <title>GRID FM MACHIN</title>
 
     <style>
       html,
@@ -598,6 +598,12 @@
         autoFmDestinationIndex = 0,
         autoFmDestinationStartStep = 0,
         autoFmMoveSteps = steps * 4,
+        autoFmParamMoveSteps = {
+          ratio: steps * 4,
+          modAmount: steps * 4,
+          decay: steps * 4,
+          longChance: steps * 4,
+        },
         autoFmHoldSteps = steps * 2,
         autoFmLongNoteBucket = -1;
       const autoFmManualReleaseMs = 1800;
@@ -940,32 +946,33 @@
       }
 
       const autoFmDestinations = [
-        { ratio: 10, modAmount: 10, decay: 90, longChance: 10, holdBars: 1 },
-        { ratio: 90, modAmount: 10, decay: 90, longChance: 10, holdBars: 1 },
-        { ratio: 90, modAmount: 90, decay: 90, longChance: 10, holdBars: 1 },
-        { ratio: 50, modAmount: 90, decay: 20, longChance: 20, holdBars: 1, moveSteps: 16 },
-        { ratio: 90, modAmount: 90, decay: 20, longChance: 20, holdBars: 1, moveSteps: 16 },
-        { ratio: 90, modAmount: 90, decay: 80, longChance: 50, holdBars: 1, moveSteps: 16 },
-        { ratio: 10, modAmount: 90, decay: 80, longChance: 50, holdBars: 1, moveSteps: 24 },
-        { ratio: 10, modAmount: 90, decay: 20, longChance: 90, holdBars: 1, moveSteps: 16 },
-        { ratio: 90, modAmount: 90, decay: 10, longChance: 90, holdBars: 1 },
-        { ratio: 10, modAmount: 90, decay: 10, longChance: 90, holdBars: 1 },
-        { ratio: 10, modAmount: 10, decay: 10, longChance: 90, holdBars: 1 },
-        { ratio: 10, modAmount: 10, decay: 90, longChance: 90, holdBars: 2 },
-        { ratio: 90, modAmount: 10, decay: 90, longChance: 90, holdBars: 1 },
-        { ratio: 90, modAmount: 10, decay: 20, longChance: 10, holdBars: 1 },
-        { ratio: 90, modAmount: 90, decay: 20, longChance: 10, holdBars: 1 },
-        { ratio: 50, modAmount: 90, decay: 90, longChance: 30, holdBars: 1, moveSteps: 16 },
-        { ratio: 10, modAmount: 90, decay: 90, longChance: 60, holdBars: 1, moveSteps: 16 },
-        { ratio: 10, modAmount: 90, decay: 30, longChance: 90, holdBars: 1, moveSteps: 16 },
-        { ratio: 90, modAmount: 90, decay: 30, longChance: 90, holdBars: 1, moveSteps: 24 },
-        { ratio: 10, modAmount: 90, decay: 80, longChance: 90, holdBars: 2 },
-        { ratio: 10, modAmount: 10, decay: 80, longChance: 90, holdBars: 1 },
-        { ratio: 50, modAmount: 10, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
-        { ratio: 50, modAmount: 90, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
-        { ratio: 50, modAmount: 50, decay: 50, longChance: 50, holdBars: 1, moveSteps: 16 },
-        { ratio: 90, modAmount: 50, decay: 80, longChance: 20, holdBars: 1, moveSteps: 24 },
-        { ratio: 10, modAmount: 50, decay: 20, longChance: 80, holdBars: 1, moveSteps: 24 },
+        { ratio: 50, modAmount: 100, decay: 50, longChance: 50, holdChoices: [8, 16, 24], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 50, longChance: 75, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 100, modAmount: 100, decay: 50, longChance: 50, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 50, longChance: 75, holdChoices: [16, 24], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 100, longChance: 75, holdChoices: [32, 48, 64], moveSteps: 16 },
+        { ratio: 100, modAmount: 100, decay: 100, longChance: 100, holdChoices: [16, 24, 32], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 100, longChance: 100, holdChoices: [32, 48, 64], moveSteps: 16 },
+        { ratio: 100, modAmount: 100, decay: 0, longChance: 100, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 0, longChance: 75, holdChoices: [8, 16, 24], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 50, longChance: 100, holdChoices: [16, 24], moveSteps: 16 },
+        { ratio: 25, modAmount: 100, decay: 100, longChance: 75, holdChoices: [16, 24, 32], moveSteps: 16 },
+        { ratio: 100, modAmount: 75, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 24 },
+        { ratio: 0, modAmount: 0, decay: 0, longChance: 100, holdChoices: [8, 16] },
+        { ratio: 100, modAmount: 0, decay: 100, longChance: 75, holdChoices: [16, 24], moveSteps: 24 },
+        { ratio: 100, modAmount: 50, decay: 0, longChance: 0, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 50, modAmount: 100, decay: 0, longChance: 50, holdChoices: [8, 16, 24], moveSteps: 16 },
+        { ratio: 100, modAmount: 100, decay: 100, longChance: 50, holdChoices: [16, 24, 32], moveSteps: 16 },
+        { ratio: 50, modAmount: 50, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 100, modAmount: 50, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 50, modAmount: 100, decay: 50, longChance: 100, holdChoices: [8, 16, 24], moveSteps: 16 },
+        { ratio: 100, modAmount: 50, decay: 50, longChance: 100, holdChoices: [8, 16], moveSteps: 16 },
+        { ratio: 50, modAmount: 100, decay: 50, longChance: 100, holdChoices: [16, 24], moveSteps: 16 },
+        { ratio: 75, modAmount: 100, decay: 100, longChance: 100, holdChoices: [16, 32], moveSteps: 16 },
+        { ratio: 0, modAmount: 100, decay: 100, longChance: 100, holdChoices: [32, 48, 64] },
+        { ratio: 0, modAmount: 0, decay: 100, longChance: 75, holdChoices: [8, 16] },
+        { ratio: 100, modAmount: 50, decay: 100, longChance: 50, holdChoices: [16, 24], moveSteps: 24 },
+        { ratio: 0, modAmount: 50, decay: 0, longChance: 100, holdChoices: [8, 16, 24], moveSteps: 24 },
       ];
 
       function percentToControl(name, value) {
@@ -982,6 +989,13 @@
 
       function barsToSteps(bars) {
         return Math.max(1, Math.round(steps * bars));
+      }
+
+      function getHoldStepCount(destination) {
+        if (destination.holdChoices !== undefined) return choose(destination.holdChoices);
+        if (destination.holdSteps !== undefined) return destination.holdSteps;
+        if (destination.holdBars !== undefined) return barsToSteps(destination.holdBars);
+        return steps;
       }
 
       function getDestinationDistance(from, to) {
@@ -1003,11 +1017,45 @@
         return 16;
       }
 
+      const autoFmSpeedPatterns = [
+        { ratio: 0.75, modAmount: 1, decay: 1.25, longChance: 1 },
+        { ratio: 1.25, modAmount: 0.75, decay: 1, longChance: 1.15 },
+        { ratio: 1, modAmount: 1.2, decay: 0.7, longChance: 1 },
+        { ratio: 0.9, modAmount: 1, decay: 1.35, longChance: 0.75 },
+      ];
+
+      function getParamMoveStepCounts(from, to, baseSteps, destinationIndex) {
+        const pattern = autoFmSpeedPatterns[destinationIndex % autoFmSpeedPatterns.length];
+        const counts = {};
+
+        ['ratio', 'modAmount', 'decay', 'longChance'].forEach((name) => {
+          if (from[name] === to[name]) {
+            counts[name] = 1;
+            return;
+          }
+
+          counts[name] = Math.max(8, Math.round(baseSteps * pattern[name]));
+        });
+
+        return counts;
+      }
+
+      function setAutoFmMoveSteps(from, to, destinationIndex) {
+        const baseSteps = getMoveStepCount(from, to);
+        autoFmParamMoveSteps = getParamMoveStepCounts(from, to, baseSteps, destinationIndex);
+        autoFmMoveSteps = Math.max(
+          autoFmParamMoveSteps.ratio,
+          autoFmParamMoveSteps.modAmount,
+          autoFmParamMoveSteps.decay,
+          autoFmParamMoveSteps.longChance,
+        );
+      }
+
       function resetAutoFmDestination() {
         autoFmDestinationIndex = 0;
         autoFmDestinationStartStep = autoFmStepCount;
-        autoFmMoveSteps = getMoveStepCount(getDestination(autoFmDestinations.length - 1), getDestination(0));
-        autoFmHoldSteps = barsToSteps(getDestination(0).holdBars);
+        setAutoFmMoveSteps(getDestination(autoFmDestinations.length - 1), getDestination(0), 0);
+        autoFmHoldSteps = getHoldStepCount(getDestination(0));
         autoFmLongNoteBucket = -1;
         Object.keys(autoFmManualUntil).forEach((key) => {
           autoFmManualUntil[key] = 0;
@@ -1017,8 +1065,12 @@
       function advanceAutoFmDestination() {
         autoFmDestinationIndex = (autoFmDestinationIndex + 1) % autoFmDestinations.length;
         autoFmDestinationStartStep = autoFmStepCount;
-        autoFmMoveSteps = getMoveStepCount(getDestination(autoFmDestinationIndex - 1), getDestination(autoFmDestinationIndex));
-        autoFmHoldSteps = barsToSteps(getDestination(autoFmDestinationIndex).holdBars);
+        setAutoFmMoveSteps(
+          getDestination(autoFmDestinationIndex - 1),
+          getDestination(autoFmDestinationIndex),
+          autoFmDestinationIndex,
+        );
+        autoFmHoldSteps = getHoldStepCount(getDestination(autoFmDestinationIndex));
       }
 
       function stopAutoFmMotion() {
@@ -1054,12 +1106,17 @@
 
         const from = getDestination(autoFmDestinationIndex - 1);
         const to = getDestination(autoFmDestinationIndex);
-        const move = smoothstep(0, 1, clamp(elapsedSteps / autoFmMoveSteps, 0, 1));
+        const moves = {
+          ratio: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.ratio, 0, 1)),
+          modAmount: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.modAmount, 0, 1)),
+          decay: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.decay, 0, 1)),
+          longChance: smoothstep(0, 1, clamp(elapsedSteps / autoFmParamMoveSteps.longChance, 0, 1)),
+        };
         const targets = {
-          ratio: percentToControl('ratio', lerp(from.ratio, to.ratio, move)),
-          modAmount: percentToControl('modAmount', lerp(from.modAmount, to.modAmount, move)),
-          decay: percentToControl('decay', lerp(from.decay, to.decay, move)),
-          longChance: percentToControl('longChance', lerp(from.longChance, to.longChance, move)),
+          ratio: percentToControl('ratio', lerp(from.ratio, to.ratio, moves.ratio)),
+          modAmount: percentToControl('modAmount', lerp(from.modAmount, to.modAmount, moves.modAmount)),
+          decay: percentToControl('decay', lerp(from.decay, to.decay, moves.decay)),
+          longChance: percentToControl('longChance', lerp(from.longChance, to.longChance, moves.longChance)),
         };
 
         if (!isAutoFmManual('ratio', now)) {
